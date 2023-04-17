@@ -3,7 +3,7 @@ module github.com/vishnuchalla/go-commons
 go 1.18
 
 require (
-	github.com/elastic/go-elasticsearch/v7 v7.17.7
+	github.com/elastic/go-elasticsearch/v7 v7.13.1
 	github.com/sirupsen/logrus v1.9.0
 )
 
