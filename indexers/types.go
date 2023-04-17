@@ -14,6 +14,7 @@
 
 package indexers
 
+// Types of indexers
 const (
 	// Elastic indexer that send metrics to the configures ES instance
 	ElasticIndexer IndexerType = "elastic"
