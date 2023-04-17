@@ -22,12 +22,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	logger "github.com/sirupsen/logrus"
 	"net/http"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
-	logger "github.com/sirupsen/logrus"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
