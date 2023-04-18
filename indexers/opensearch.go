@@ -19,7 +19,7 @@ import (
 	opensearchutil "github.com/opensearch-project/opensearch-go/opensearchutil"
 )
 
-const opensearch = "opensearch"
+const indexer = "opensearch"
 
 // OpenSearch OpenSearch instance
 type OpenSearch struct {
@@ -29,7 +29,7 @@ type OpenSearch struct {
 
 // Init function
 func init() {
-	indexerMap[opensearch] = &OpenSearch{}
+	indexerMap[indexer] = &OpenSearch{}
 }
 
 // Returns new index for OpenSearch
