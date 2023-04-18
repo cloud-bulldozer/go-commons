@@ -41,10 +41,12 @@ type Elastic struct {
 	index  string
 }
 
+// Init function
 func init() {
 	indexerMap[elastic] = &Elastic{}
 }
 
+// Returns new index for elastic search
 func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
 	esConfig := indexerConfig
 	if esConfig.DefaultIndex == "" {

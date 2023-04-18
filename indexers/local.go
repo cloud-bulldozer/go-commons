@@ -25,14 +25,17 @@ import (
 
 const local = "local"
 
+// Local indexer instance
 type Local struct {
 	metricsDirectory string
 }
 
+// Init function
 func init() {
 	indexerMap[local] = &Local{}
 }
 
+// Prepares local indexing directory
 func (l *Local) new(indexerConfig IndexerConfig) error {
 	if indexerConfig.MetricsDirectory == "" {
 		return fmt.Errorf("directory name not specified")
