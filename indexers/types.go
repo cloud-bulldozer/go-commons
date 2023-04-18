@@ -16,8 +16,10 @@ package indexers
 
 // Types of indexers
 const (
-	// Elastic indexer that send metrics to the configures ES instance
+	// Elastic indexer that sends metrics to the configured ES instance
 	ElasticIndexer IndexerType = "elastic"
+	// OpenSearch indexer that sends metrics to the configured Search Instance
+	OpenSearchIndexer IndexerType = "opensearch" 
 	// Local indexer that writes metrics to local directory
 	LocalIndexer IndexerType = "local"
 )
