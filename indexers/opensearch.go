@@ -32,7 +32,7 @@ func init() {
 	indexerMap[indexer] = &OpenSearch{}
 }
 
-// Returns new index for OpenSearch
+// Returns new indexer for OpenSearch
 func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 	OpenSearchConfig := indexerConfig
 	if OpenSearchConfig.DefaultIndex == "" {

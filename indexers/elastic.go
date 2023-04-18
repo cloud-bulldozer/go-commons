@@ -46,7 +46,7 @@ func init() {
 	indexerMap[elastic] = &Elastic{}
 }
 
-// Returns new index for elastic search
+// Returns new indexer for elastic search
 func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
 	esConfig := indexerConfig
 	if esConfig.DefaultIndex == "" {
