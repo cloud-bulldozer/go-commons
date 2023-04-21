@@ -66,7 +66,7 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 }
 
 // Index uses bulkIndexer to index the documents in the given index
-func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts IndexingOpts) error {
+func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts IndexingOpts) (string, error) {
 	var statString string
 	var indexerStatsLock sync.Mutex
 	indexerStats := make(map[string]int)
@@ -79,12 +79,13 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 		Timeout:    10 * time.Minute, // TODO: hardcoded
 	})
 	if err != nil {
-		return fmt.Errorf("Error creating the indexer: %s", err)
+		return "", fmt.Errorf("Error creating the indexer: %s", err)
 	}
+	start := time.Now().UTC()
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
-			return fmt.Errorf("Cannot encode document %s: %s", document, err)
+			return "", fmt.Errorf("Cannot encode document %s: %s", document, err)
 		}
 		hasher.Write(j)
 		err = bi.Add(
@@ -101,15 +102,16 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("Unexpected OpenSearch indexing error: %s", err)
+			return "", fmt.Errorf("Unexpected OpenSearch indexing error: %s", err)
 		}
 		hasher.Reset()
 	}
 	if err := bi.Close(context.Background()); err != nil {
-		return fmt.Errorf("Unexpected OpenSearch error: %s", err)
+		return "", fmt.Errorf("Unexpected OpenSearch error: %s", err)
 	}
+	dur := time.Since(start)
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
 	}
-	return nil
+	return fmt.Sprintf("Indexing finished in %v:%v", dur.Truncate(time.Millisecond), statString), nil
 }

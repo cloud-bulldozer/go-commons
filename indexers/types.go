@@ -26,7 +26,7 @@ const (
 
 // Indexer indexer interface
 type Indexer interface {
-	Index([]interface{}, IndexingOpts) error
+	Index([]interface{}, IndexingOpts) (string, error)
 	new(IndexerConfig) error
 }
 
