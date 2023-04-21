@@ -58,7 +58,8 @@ func (l *Local) Index(documents []interface{}, opts IndexingOpts) error {
 	}
 	defer f.Close()
 	jsonEnc := json.NewEncoder(f)
-	if jsonEnc.Encode(documents); err != nil {
+	if err := jsonEnc.Encode(documents); err != nil {
 		return fmt.Errorf("JSON encoding error: %s", err)
 	}
+	return nil
 }

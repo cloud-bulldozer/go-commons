@@ -81,7 +81,6 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	if err != nil {
 		return fmt.Errorf("Error creating the indexer: %s", err)
 	}
-	start := time.Now().UTC()
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
@@ -109,8 +108,8 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	if err := bi.Close(context.Background()); err != nil {
 		return fmt.Errorf("Unexpected OpenSearch error: %s", err)
 	}
-	dur := time.Since(start)
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
 	}
+	return nil
 }

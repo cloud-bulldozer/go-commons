@@ -95,7 +95,6 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) erro
 	if err != nil {
 		return fmt.Errorf("Error creating the indexer: %s", err)
 	}
-	start := time.Now().UTC()
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
@@ -123,8 +122,8 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) erro
 	if err := bi.Close(context.Background()); err != nil {
 		return fmt.Errorf("Unexpected ES error: %s", err)
 	}
-	dur := time.Since(start)
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
 	}
+	return nil
 }
