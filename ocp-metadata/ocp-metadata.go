@@ -93,6 +93,40 @@ func (meta *Metadata) GetPrometheus() (string, string, error) {
 	return prometheusURL, prometheusToken, err
 }
 
+// GetCurrentPodCount returns the number of current running pods across all worker nodes
+func (meta *Metadata) GetCurrentPodCount() (int, error) {
+	var podCount int
+	nodeList, err := meta.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: workerNodeSelector})
+	if err != nil {
+		return podCount, err
+	}
+	for _, node := range nodeList.Items {
+		podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running,spec.nodeName=" + node.Name})
+		if err != nil {
+			return podCount, err
+		}
+		podCount += len(podList.Items)
+	}
+	return podCount, nil
+}
+
+// GetDefaultIngressDomain returns default ingress domain of the default ingress controller
+func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
+	ingressController, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "operator.openshift.io",
+		Version:  "v1",
+		Resource: "ingresscontrollers",
+	}).Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	ingressDomain, found, err := unstructured.NestedString(ingressController.UnstructuredContent(), "status", "domain")
+	if !found {
+		return "", fmt.Errorf("domain field not found in operator.openshift.io/v1/namespaces/openshift-ingress-operator/ingresscontrollers/default status")
+	}
+	return ingressDomain, err
+}
+
 // getPrometheusURL Returns a valid prometheus endpoint from the openshift-monitoring/prometheus-k8s route
 func getPrometheusURL(dynamicClient dynamic.Interface) (string, error) {
 	route, err := dynamicClient.Resource(schema.GroupVersionResource{
@@ -122,23 +156,6 @@ func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
 	}
 	response, err := clientset.CoreV1().ServiceAccounts(monitoringNs).CreateToken(context.TODO(), "prometheus-k8s", &request, metav1.CreateOptions{})
 	return response.Status.Token, err
-}
-
-// GetCurrentPodCount returns the number of current running pods across all worker nodes
-func (meta *Metadata) GetCurrentPodCount() (int, error) {
-	var podCount int
-	nodeList, err := meta.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: workerNodeSelector})
-	if err != nil {
-		return podCount, err
-	}
-	for _, node := range nodeList.Items {
-		podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running,spec.nodeName=" + node.Name})
-		if err != nil {
-			return podCount, err
-		}
-		podCount += len(podList.Items)
-	}
-	return podCount, nil
 }
 
 // getInfraDetails returns cluster anme and platform
@@ -234,21 +251,4 @@ func (meta *Metadata) getSDNInfo() (string, error) {
 		return "", fmt.Errorf("networkType field not found in config.openshift.io/v1/network/networks/cluster status")
 	}
 	return networkType, err
-}
-
-// GetDefaultIngressDomain returns default ingress domain of the default ingress controller
-func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
-	ingressController, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
-		Group:    "operator.openshift.io",
-		Version:  "v1",
-		Resource: "ingresscontrollers",
-	}).Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	ingressDomain, found, err := unstructured.NestedString(ingressController.UnstructuredContent(), "status", "domain")
-	if !found {
-		return "", fmt.Errorf("domain field not found in operator.openshift.io/v1/namespaces/openshift-ingress-operator/ingresscontrollers/default status")
-	}
-	return ingressDomain, err
 }
