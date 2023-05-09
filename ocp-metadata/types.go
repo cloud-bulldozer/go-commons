@@ -27,6 +27,12 @@ const (
 	tokenExpiration    = 10 * time.Hour
 )
 
+// infraObj
+// TODO at the moment can be used to decode some AWS platform specific information from the infrastructure object
+// like region and resourceTags (which is actually used to detect if this is a ROSA cluster)
+// similar information is not found for other platforms like GCP or Azure.
+// To collect such information we shall use a different approach, i.e:
+// Using well known node labels like topology.kubernetes.io/region to get the cloud region
 type infraObj struct {
 	Status struct {
 		InfrastructureName string `json:"infrastructureName"`
