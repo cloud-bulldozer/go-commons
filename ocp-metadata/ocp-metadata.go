@@ -179,10 +179,10 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 	var cv clusterVersion
 	var versionInfo versionObj
 	version, err := meta.clientSet.ServerVersion()
-	versionInfo.k8sVersion = version.GitVersion
 	if err != nil {
 		return versionInfo, err
 	}
+	versionInfo.k8sVersion = version.GitVersion
 	clusterVersion, err := meta.dynamicClient.Resource(
 		schema.GroupVersionResource{
 			Group:    "config.openshift.io",
@@ -193,7 +193,10 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 		return versionInfo, err
 	}
 	clusterVersionBytes, _ := clusterVersion.MarshalJSON()
-	json.Unmarshal(clusterVersionBytes, &cv)
+	err = json.Unmarshal(clusterVersionBytes, &cv)
+	if err != nil {
+		return versionInfo, err
+	}
 	for _, update := range cv.Status.History {
 		if update.State == completedUpdate {
 			// obtain the version from the last completed update
