@@ -83,4 +83,5 @@ type ClusterMetadata struct {
 	TotalNodes       int    `json:"totalNodes"`
 	SDNType          string `json:"sdnType"`
 	ClusterName      string `json:"clusterName"`
+	Region           string `json:"region"`
 }

@@ -54,7 +54,7 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	if err != nil {
 		return metadata, nil
 	}
-	metadata.ClusterName, metadata.Platform = infra.Status.InfrastructureName, infra.Status.Platform
+	metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
 	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
 		if v.Key == "red-hat-clustertype" {
 			metadata.Platform = v.Value
@@ -158,7 +158,7 @@ func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
 	return response.Status.Token, err
 }
 
-// getInfraDetails returns cluster anme and platform
+// getInfraDetails returns cluster name and platform
 func (meta *Metadata) getInfraDetails() (infraObj, error) {
 	var infraJSON infraObj
 	infra, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
