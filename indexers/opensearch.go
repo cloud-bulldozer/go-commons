@@ -14,11 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	opensearch "github.com/opensearch-project/opensearch-go/v2"
-	opensearchapi "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	opensearchutil "github.com/opensearch-project/opensearch-go/v2/opensearchutil"
-	requestsigner "github.com/opensearch-project/opensearch-go/v2/signer/awsv2"
+	opensearch "github.com/opensearch-project/opensearch-go"
+	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
+	opensearchutil "github.com/opensearch-project/opensearch-go/opensearchutil"
+	requestsigner "github.com/opensearch-project/opensearch-go/signer/aws"
 )
 
 const indexer = "opensearch"
@@ -46,13 +45,8 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 		return fmt.Errorf("index name not specified")
 	}
 	OpenSearchIndex := strings.ToLower(OpenSearchConfig.Index)
-	ctx := context.Background()
-	awsCfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to load aws configuration: %v", err) // Do not log.fatal in a production ready app.
-	}
 	signer, err := requestsigner.NewSignerWithService(
-		awsCfg,
+		session.Options{SharedConfigState: session.SharedConfigEnable},
 		OpenSearchServiceName[OpenSearchConfig.Serverless],
 	)
 	if err != nil {
@@ -68,6 +62,7 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 		return fmt.Errorf("error creating the OpenSearch client: %s", err)
 	}
 	if OpenSearchConfig.Serverless {
+		ctx := context.Background()
 		ping := opensearchapi.PingRequest{}
 
 		resp, err := ping.Do(ctx, OpenSearchClient)
@@ -76,12 +71,12 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 		}
 		defer resp.Body.Close()
 	} else {
-		r1, err := OpenSearchClient.Cluster.Health()
+		resp, err := OpenSearchClient.Cluster.Health()
 		if err != nil {
 			return fmt.Errorf("OpenSearch health check failed: %s", err)
 		}
-		if r1.StatusCode != 200 {
-			return fmt.Errorf("unexpected OpenSearch status code: %d", r1.StatusCode)
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("unexpected OpenSearch status code: %d", resp.StatusCode)
 		}
 	}
 	OpenSearchIndexer.client = OpenSearchClient
