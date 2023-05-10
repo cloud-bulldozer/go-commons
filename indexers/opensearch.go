@@ -24,8 +24,8 @@ import (
 const indexer = "opensearch"
 
 var OpenSearchServiceName = map[bool]string{
-  false: "es",
-  true:  "aoss",
+	false: "es",
+	true:  "aoss",
 }
 
 // OpenSearch OpenSearch instance
@@ -46,55 +46,55 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 		return fmt.Errorf("index name not specified")
 	}
 	OpenSearchIndex := strings.ToLower(OpenSearchConfig.Index)
-  ctx := context.Background()
+	ctx := context.Background()
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load aws configuraiton: %v", err) // Do not log.fatal in a production ready app.
 	}
-  signer, err := requestsigner.NewSignerWithService(
-    awsCfg,
+	signer, err := requestsigner.NewSignerWithService(
+		awsCfg,
 		OpenSearchServiceName[OpenSearchConfig.Serverless],
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create AWS api signer for OpenSearch: %v", err) // Do not log.fatal in a production ready app.
 	}
-  cfg := opensearch.Config{
-  	Addresses: OpenSearchConfig.Servers,
-  	Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: OpenSearchConfig.InsecureSkipVerify}},
-    Signer:    signer,
-  }
+	cfg := opensearch.Config{
+		Addresses: OpenSearchConfig.Servers,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: OpenSearchConfig.InsecureSkipVerify}},
+		Signer:    signer,
+	}
 	OpenSearchClient, err := opensearch.NewClient(cfg)
 	if err != nil {
 		return fmt.Errorf("error creating the OpenSearch client: %s", err)
 	}
-  fmt.Println(OpenSearchServiceName[OpenSearchConfig.Serverless])
+	fmt.Println(OpenSearchServiceName[OpenSearchConfig.Serverless])
 	if OpenSearchConfig.Serverless {
-    ping := opensearchapi.PingRequest{}
+		ping := opensearchapi.PingRequest{}
 
-	  resp, err := ping.Do(ctx, OpenSearchClient)
-	  if err != nil {
-	  	return fmt.Errorf("failed to ping opensearch serverless: %v", err)
-	  }
-	  defer resp.Body.Close()
-  } else {
-    r1, err := OpenSearchClient.Cluster.Health()
-  	if err != nil {
-  		return fmt.Errorf("OpenSearch health check failed: %s", err)
-  	}
-  	if r1.StatusCode != 200 {
-  		return fmt.Errorf("unexpected OpenSearch status code: %d", r1.StatusCode)
-  	}
-  }
+		resp, err := ping.Do(ctx, OpenSearchClient)
+		if err != nil {
+			return fmt.Errorf("failed to ping opensearch serverless: %v", err)
+		}
+		defer resp.Body.Close()
+	} else {
+		r1, err := OpenSearchClient.Cluster.Health()
+		if err != nil {
+			return fmt.Errorf("OpenSearch health check failed: %s", err)
+		}
+		if r1.StatusCode != 200 {
+			return fmt.Errorf("unexpected OpenSearch status code: %d", r1.StatusCode)
+		}
+	}
 	OpenSearchIndexer.client = OpenSearchClient
 	OpenSearchIndexer.index = OpenSearchIndex
 	fmt.Println(OpenSearchIndex)
-  r, _ := OpenSearchIndexer.client.Indices.Exists([]string{OpenSearchIndex})
+	r, _ := OpenSearchIndexer.client.Indices.Exists([]string{OpenSearchIndex})
 	if r.IsError() {
 		r, _ = OpenSearchIndexer.client.Indices.Create(OpenSearchIndex)
 		if r.IsError() {
 			return fmt.Errorf("error creating index %s on OpenSearch: %s", OpenSearchIndex, r.String())
 		}
-	  fmt.Println("Created index")
+		fmt.Println("Created index")
 	}
 	return nil
 }
