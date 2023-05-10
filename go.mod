@@ -3,6 +3,7 @@ module github.com/cloud-bulldozer/go-commons
 go 1.19
 
 require (
+	github.com/aws/aws-sdk-go v1.44.180
 	github.com/elastic/go-elasticsearch/v7 v7.13.1
 	github.com/opensearch-project/opensearch-go v1.1.0
 	k8s.io/api v0.27.1
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.180 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
