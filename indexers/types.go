@@ -45,6 +45,8 @@ type IndexerConfig struct {
 	Type IndexerType `yaml:"type"`
 	// Servers List of ElasticSearch instances
 	Servers []string `yaml:"esServers"`
+	// Is Serverless?
+	Serverless bool `yaml:"serverless"`
 	// Index index to send documents to server
 	Index string `yaml:"defaultIndex"`
 	// Port indexer port
