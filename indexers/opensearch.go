@@ -49,7 +49,7 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 	ctx := context.Background()
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to load aws configuraiton: %v", err) // Do not log.fatal in a production ready app.
+		return fmt.Errorf("failed to load aws configuration: %v", err) // Do not log.fatal in a production ready app.
 	}
 	signer, err := requestsigner.NewSignerWithService(
 		awsCfg,
@@ -67,7 +67,6 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 	if err != nil {
 		return fmt.Errorf("error creating the OpenSearch client: %s", err)
 	}
-	fmt.Println(OpenSearchServiceName[OpenSearchConfig.Serverless])
 	if OpenSearchConfig.Serverless {
 		ping := opensearchapi.PingRequest{}
 
@@ -87,14 +86,12 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 	}
 	OpenSearchIndexer.client = OpenSearchClient
 	OpenSearchIndexer.index = OpenSearchIndex
-	fmt.Println(OpenSearchIndex)
 	r, _ := OpenSearchIndexer.client.Indices.Exists([]string{OpenSearchIndex})
 	if r.IsError() {
 		r, _ = OpenSearchIndexer.client.Indices.Create(OpenSearchIndex)
 		if r.IsError() {
 			return fmt.Errorf("error creating index %s on OpenSearch: %s", OpenSearchIndex, r.String())
 		}
-		fmt.Println("Created index")
 	}
 	return nil
 }
