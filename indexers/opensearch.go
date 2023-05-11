@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
-	"encoding/hex"
+	//"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,11 +14,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	opensearch "github.com/opensearch-project/opensearch-go"
-	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	opensearchutil "github.com/opensearch-project/opensearch-go/opensearchutil"
-	requestsigner "github.com/opensearch-project/opensearch-go/signer/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	opensearch "github.com/opensearch-project/opensearch-go/v2"
+	opensearchapi "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	opensearchutil "github.com/opensearch-project/opensearch-go/v2/opensearchutil"
+	requestsigner "github.com/opensearch-project/opensearch-go/v2/signer/awsv2"
+  // opensearch-go v1 fails signing for aoss, v2 works
 )
 
 const indexer = "opensearch"
@@ -46,8 +47,11 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 		return fmt.Errorf("index name not specified")
 	}
 	OpenSearchIndex := strings.ToLower(OpenSearchConfig.Index)
+
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.TODO())
+
 	signer, err := requestsigner.NewSignerWithService(
-		session.Options{SharedConfigState: session.SharedConfigEnable},
+		awsCfg, // session.Options{SharedConfigState: session.SharedConfigEnable},
 		OpenSearchServiceName[OpenSearchConfig.Serverless],
 	)
 	if err != nil {
@@ -120,7 +124,8 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 			opensearchutil.BulkIndexerItem{
 				Action:     "index",
 				Body:       bytes.NewReader(j),
-				DocumentID: hex.EncodeToString(hasher.Sum(nil)),
+				// aoss does not support documentid being set? err: "ERROR: illegal_argument_exception: Document ID is not supported in create/index operation request"
+				//DocumentID: hex.EncodeToString(hasher.Sum(nil)),
 				OnSuccess: func(c context.Context, bii opensearchutil.BulkIndexerItem, biri opensearchutil.BulkIndexerResponseItem) {
 					indexerStatsLock.Lock()
 					defer indexerStatsLock.Unlock()
