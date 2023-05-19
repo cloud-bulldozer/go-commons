@@ -26,7 +26,7 @@ import (
 
 	api "github.com/prometheus/client_golang/api"
 	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"github.com/vishnuchalla/go-commons/utils"
+	"github.com/cloud-bulldozer/go-commons/utils"
 	"github.com/prometheus/common/model"
 )
 
