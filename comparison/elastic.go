@@ -3,7 +3,6 @@ package comparison
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v7"
@@ -14,11 +13,12 @@ type Comparator struct {
 	index  string
 }
 
-// NewComparator returns a new comparator for the given index and elasticsearch instance
-func NewComparator(cli elasticsearch.Client, index string) (Comparator, error) {
+// NewComparator returns a new comparator for the given index and elasticsearch client
+func NewComparator(client elasticsearch.Client, index string) Comparator {
 	return Comparator{
-		client: cli,
-		index:  index}, nil
+		client: client,
+		index:  index,
+	}
 }
 
 // Compare returns error if value does not meet the tolerance as
@@ -27,6 +27,8 @@ func NewComparator(cli elasticsearch.Client, index string) (Comparator, error) {
 // Where field is the field we want to compare, query is the query string
 // to use for the search, stat is the type of aggregation to compare with value
 // and toleration is the percentaje difference tolerated, it can negative
+// it returns an error when the field doesn't meet the tolerancy, and an
+// informative message when it does
 func (c *Comparator) Compare(field, query string, stat Stat, value float64, tolerancy int) (string, error) {
 	stats, err := c.queryStringStats(field, query)
 	var baseline float64
@@ -43,19 +45,38 @@ func (c *Comparator) Compare(field, query string, stat Stat, value float64, tole
 	case Sum:
 		baseline = stats.Sum
 	}
-	relativeChange := (value - baseline) * 100 / baseline
 	if tolerancy >= 0 {
-		if relativeChange < float64(tolerancy) {
-			return "", fmt.Errorf("%f doesn't meet tolerance (%d) against %f", value, tolerancy, baseline)
+		baselineTolerancy := baseline * (100 - float64(tolerancy)) / 100
+		if value < baselineTolerancy {
+			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f rps is %.2f%% lower than baseline: %.2f rps", tolerancy, value, 100-(value*100/baseline), baseline)
 		}
 	} else if tolerancy < 0 {
-		if relativeChange > float64(tolerancy) {
-			return "", fmt.Errorf("%f doesn't meet tolerance (%d) against %f", value, tolerancy, baseline)
+		baselineTolerancy := baseline * (100 + float64(tolerancy)) / 100
+		if value > baselineTolerancy {
+			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f is %.2f%% rps higher than baseline: %.2f rps", tolerancy, value, (value*100/baseline)-100, baseline)
 		}
 	}
-	return fmt.Sprintf("%f meets %d tolerancy against %f", value, tolerancy, baseline), nil
+	return fmt.Sprintf("%2.f rps meets %d%% tolerancy against %.2f rps", value, tolerancy, baseline), nil
 }
 
+// queryStringStats perform a query of type query_string,to fetch the stats of a specific field
+// this type of query accepts a simple query format similar to the kibana queries, i.e:
+//
+//	{
+//	 "aggs": {
+//	   "stats": {
+//	     "stats": {
+//	       "field": "our_field"
+//	     }
+//	   }
+//	 },
+//	 "query": {
+//	   "query_string": {
+//	     "query": "uuid.keyword: our_uuid AND param1.keyword: value1"
+//	   }
+//	 },
+//	 "size": 0
+//	}
 func (c *Comparator) queryStringStats(field, query string) (stats, error) {
 	var response QueryStringResponse
 	var queryStringRequest map[string]interface{} = map[string]interface{}{
@@ -95,7 +116,8 @@ func (c *Comparator) queryStringStats(field, query string) (stats, error) {
 		}
 	}
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		log.Fatalf("Error parsing the response body: %s", err)
+		return stats{}, fmt.Errorf("error parsing the response body: %s", err)
 	}
+
 	return response.Aggregations.stats, nil
 }

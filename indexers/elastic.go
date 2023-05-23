@@ -1,4 +1,4 @@
-// Copyright 2020 The Kube-burner Authors.
+// Copyright 2023 The go-commons Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,9 +36,11 @@ const elastic = "elastic"
 
 // Elastic ElasticSearch instance
 type Elastic struct {
-	client *elasticsearch.Client
-	index  string
+	index string
 }
+
+// ESClient elasticsearch client instance
+var ESClient *elasticsearch.Client
 
 // Init function
 func init() {
@@ -47,16 +49,16 @@ func init() {
 
 // Returns new indexer for elastic search
 func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
-	esConfig := indexerConfig
-	if esConfig.Index == "" {
+	var err error
+	if indexerConfig.Index == "" {
 		return fmt.Errorf("index name not specified")
 	}
-	esIndex := strings.ToLower(esConfig.Index)
+	esIndex := strings.ToLower(indexerConfig.Index)
 	cfg := elasticsearch.Config{
-		Addresses: esConfig.Servers,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: esConfig.InsecureSkipVerify}},
+		Addresses: indexerConfig.Servers,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: indexerConfig.InsecureSkipVerify}},
 	}
-	ESClient, err := elasticsearch.NewClient(cfg)
+	ESClient, err = elasticsearch.NewClient(cfg)
 	if err != nil {
 		return fmt.Errorf("error creating the ES client: %s", err)
 	}
@@ -67,11 +69,10 @@ func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
 	if r.StatusCode != 200 {
 		return fmt.Errorf("unexpected ES status code: %d", r.StatusCode)
 	}
-	esIndexer.client = ESClient
 	esIndexer.index = esIndex
-	r, _ = esIndexer.client.Indices.Exists([]string{esIndex})
+	r, _ = ESClient.Indices.Exists([]string{esIndex})
 	if r.IsError() {
-		r, _ = esIndexer.client.Indices.Create(esIndex)
+		r, _ = ESClient.Indices.Create(esIndex)
 		if r.IsError() {
 			return fmt.Errorf("error creating index %s on ES: %s", esIndex, r.String())
 		}
@@ -86,7 +87,7 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	indexerStats := make(map[string]int)
 	hasher := sha256.New()
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Client:     esIndexer.client,
+		Client:     ESClient,
 		Index:      esIndexer.index,
 		FlushBytes: 5e+6,
 		NumWorkers: runtime.NumCPU(),
