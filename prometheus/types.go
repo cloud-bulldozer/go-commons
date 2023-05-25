@@ -1,4 +1,4 @@
-// Copyright 2021 The Kube-burner Authors.
+// Copyright 2021 The go-commons Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,32 +16,14 @@ package prometheus
 
 import (
 	"net/http"
-	"time"
 
 	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 // Prometheus describes the prometheus connection
 type Prometheus struct {
-	api           apiv1.API
+	Api           apiv1.API
 	Endpoint      string
-	MetricProfile MetricProfile
-	Step          time.Duration
-	UUID          string
-	JobList       []Job
-	metadata      map[string]interface{}
-}
-
-type QueryResult struct {
-	DataPoints []interface{}
-	Err error
-}
-
-type Job struct {
-	Start     time.Time
-	End       time.Time
-	Name      string
-	JobConfig interface{}
 }
 
 // This object implements RoundTripper
@@ -50,34 +32,4 @@ type authTransport struct {
 	token     string
 	username  string
 	password  string
-}
-
-// MetricProfile describes what metrics kube-burner collects
-type MetricProfile []struct {
-	Query      string `yaml:"query"`
-	MetricName string `yaml:"metricName"`
-	IndexName  string `yaml:"indexName"`
-	Instant    bool   `yaml:"instant"`
-}
-
-// MetricEndpoint describes prometheus endpoint to scrape
-type MetricEndpoint struct {
-	Endpoint     string `yaml:"endpoint"`
-	Token        string `yaml:"token"`
-	Profile      string `yaml:"profile"`
-	AlertProfile string `yaml:"alertProfile"`
-	Start        int64  `yaml:"start"`
-	End          int64  `yaml:"end"`
-}
-
-type metric struct {
-	Timestamp  time.Time         `json:"timestamp"`
-	Labels     map[string]string `json:"labels"`
-	Value      float64           `json:"value"`
-	UUID       string            `json:"uuid"`
-	Query      string            `json:"query"`
-	MetricName string            `json:"metricName,omitempty"`
-	JobName    string            `json:"jobName,omitempty"`
-	JobConfig  interface{} 		 `json:"jobConfig,omitempty"`
-	Metadata   interface{}       `json:"metadata,omitempty"`
 }
