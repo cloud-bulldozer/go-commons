@@ -20,10 +20,12 @@ import (
 
 const indexer = "opensearch"
 
+// OSClient OpenSearch client instance
+var OSClient *opensearch.Client
+
 // OpenSearch OpenSearch instance
 type OpenSearch struct {
-	client *opensearch.Client
-	index  string
+	index string
 }
 
 // Init function
@@ -33,31 +35,30 @@ func init() {
 
 // Returns new indexer for OpenSearch
 func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
-	OpenSearchConfig := indexerConfig
-	if OpenSearchConfig.Index == "" {
+	var err error
+	if indexerConfig.Index == "" {
 		return fmt.Errorf("index name not specified")
 	}
-	OpenSearchIndex := strings.ToLower(OpenSearchConfig.Index)
+	OpenSearchIndex := strings.ToLower(indexerConfig.Index)
 	cfg := opensearch.Config{
-		Addresses: OpenSearchConfig.Servers,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: OpenSearchConfig.InsecureSkipVerify}},
+		Addresses: indexerConfig.Servers,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: indexerConfig.InsecureSkipVerify}},
 	}
-	OpenSearchClient, err := opensearch.NewClient(cfg)
+	OSClient, err = opensearch.NewClient(cfg)
 	if err != nil {
 		return fmt.Errorf("error creating the OpenSearch client: %s", err)
 	}
-	r, err := OpenSearchClient.Cluster.Health()
+	r, err := OSClient.Cluster.Health()
 	if err != nil {
 		return fmt.Errorf("OpenSearch health check failed: %s", err)
 	}
 	if r.StatusCode != 200 {
 		return fmt.Errorf("unexpected OpenSearch status code: %d", r.StatusCode)
 	}
-	OpenSearchIndexer.client = OpenSearchClient
 	OpenSearchIndexer.index = OpenSearchIndex
-	r, _ = OpenSearchIndexer.client.Indices.Exists([]string{OpenSearchIndex})
+	r, _ = OSClient.Indices.Exists([]string{OpenSearchIndex})
 	if r.IsError() {
-		r, _ = OpenSearchIndexer.client.Indices.Create(OpenSearchIndex)
+		r, _ = OSClient.Indices.Create(OpenSearchIndex)
 		if r.IsError() {
 			return fmt.Errorf("error creating index %s on OpenSearch: %s", OpenSearchIndex, r.String())
 		}
@@ -72,7 +73,7 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	indexerStats := make(map[string]int)
 	hasher := sha256.New()
 	bi, err := opensearchutil.NewBulkIndexer(opensearchutil.BulkIndexerConfig{
-		Client:     OpenSearchIndexer.client,
+		Client:     OSClient,
 		Index:      OpenSearchIndexer.index,
 		FlushBytes: 5e+6,
 		NumWorkers: runtime.NumCPU(),
