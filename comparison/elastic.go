@@ -48,15 +48,15 @@ func (c *Comparator) Compare(field, query string, stat Stat, value float64, tole
 	if tolerancy >= 0 {
 		baselineTolerancy := baseline * (100 - float64(tolerancy)) / 100
 		if value < baselineTolerancy {
-			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f rps is %.2f%% lower than baseline: %.2f rps", tolerancy, value, 100-(value*100/baseline), baseline)
+			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f is %.2f%% lower than baseline: %.2f", tolerancy, value, 100-(value*100/baseline), baseline)
 		}
 	} else if tolerancy < 0 {
 		baselineTolerancy := baseline * (100 + float64(tolerancy)) / 100
 		if value > baselineTolerancy {
-			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f is %.2f%% rps higher than baseline: %.2f rps", tolerancy, value, (value*100/baseline)-100, baseline)
+			return "", fmt.Errorf("with a tolerancy of %d%%: %.2f is %.2f%% higher than baseline: %.2f", tolerancy, value, (value*100/baseline)-100, baseline)
 		}
 	}
-	return fmt.Sprintf("%2.f rps meets %d%% tolerancy against %.2f rps", value, tolerancy, baseline), nil
+	return fmt.Sprintf("%2.f meets %d%% tolerancy against %.2f", value, tolerancy, baseline), nil
 }
 
 // queryStringStats perform a query of type query_string,to fetch the stats of a specific field
