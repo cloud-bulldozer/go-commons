@@ -1,4 +1,4 @@
-module github.com/vishnuchalla/go-commons
+module github.com/cloud-bulldozer/go-commons
 
 go 1.19
 
