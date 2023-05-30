@@ -36,14 +36,14 @@ func (bat authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // NewClient creates a prometheus struct instance with the given parameters
-func NewClient(url, token, username, password string, tlsVerify bool) (*Prometheus, error) {
+func NewClient(url, token, username, password string, tlsSkipVerify bool) (*Prometheus, error) {
 	prometheus := Prometheus{
 		Endpoint: url,
 	}
 	cfg := api.Config{
 		Address: url,
 		RoundTripper: authTransport{
-			Transport: &http.Transport{Proxy: http.ProxyFromEnvironment, TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsVerify}},
+			Transport: &http.Transport{Proxy: http.ProxyFromEnvironment, TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify}},
 			token:     token,
 			username:  username,
 			password:  password,
