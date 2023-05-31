@@ -1,4 +1,4 @@
-// Copyright 2023 The go-commons Authors.
+// Copyright 2021 The go-commons Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package comparison
+package prometheus
 
-type Stat string
+import (
+	"net/http"
 
-// Constant for all the stats
-const (
-	Min Stat = "min"
-	Max Stat = "max"
-	Avg Stat = "avg"
-	Sum Stat = "sum"
+	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
-// Type to store query response
-type QueryStringResponse struct {
-	Aggregations struct {
-		stats `json:"stats"`
-	} `json:"aggregations"`
+// Prometheus describes the prometheus connection
+type Prometheus struct {
+	api      apiv1.API
+	Endpoint string
 }
 
-// Type to store the stats
-type stats struct {
-	Min float64 `json:"min"`
-	Max float64 `json:"max"`
-	Avg float64 `json:"avg"`
-	Sum float64 `json:"sum"`
+// This object implements RoundTripper
+type authTransport struct {
+	Transport http.RoundTripper
+	token     string
+	username  string
+	password  string
 }

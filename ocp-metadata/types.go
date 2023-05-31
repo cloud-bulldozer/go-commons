@@ -1,4 +1,4 @@
-// Copyright 2022 The Kube-burner Authors.
+// Copyright 2023 The go-commons Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package ocpmetadata
 
 import "time"
 
+// OCP specific constants
 const (
 	routeGroup         = "route.openshift.io"
 	routeVersion       = "v1"
@@ -51,11 +52,13 @@ type infraObj struct {
 	} `json:"status"`
 }
 
+// Type to store version info
 type versionObj struct {
 	ocpVersion string
 	k8sVersion string
 }
 
+// Type to store cluster info
 type clusterVersion struct {
 	Status struct {
 		History []struct {
@@ -65,6 +68,7 @@ type clusterVersion struct {
 	} `json:"status"`
 }
 
+// Type to store node info
 type nodeInfo struct {
 	workerCount int
 	infraCount  int
@@ -75,6 +79,7 @@ type nodeInfo struct {
 	infraType   string
 }
 
+// Type to store cluster metadata
 type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
 	Platform         string `json:"platform"`
