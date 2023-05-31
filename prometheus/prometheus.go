@@ -53,7 +53,7 @@ func NewClient(url, token, username, password string, tlsSkipVerify bool) (*Prom
 	if err != nil {
 		return &prometheus, err
 	}
-	prometheus.Api = apiv1.NewAPI(c)
+	prometheus.api = apiv1.NewAPI(c)
 	// Verify Prometheus connection prior returning
 	if err := prometheus.verifyConnection(); err != nil {
 		return &prometheus, err
@@ -64,7 +64,7 @@ func NewClient(url, token, username, password string, tlsSkipVerify bool) (*Prom
 // Query prometheus query wrapper
 func (p *Prometheus) Query(query string, time time.Time) (model.Value, error) {
 	var v model.Value
-	v, _, err := p.Api.Query(context.TODO(), query, time)
+	v, _, err := p.api.Query(context.TODO(), query, time)
 	if err != nil {
 		return v, err
 	}
@@ -75,7 +75,7 @@ func (p *Prometheus) Query(query string, time time.Time) (model.Value, error) {
 func (p *Prometheus) QueryRange(query string, start, end time.Time, step time.Duration) (model.Value, error) {
 	var v model.Value
 	r := apiv1.Range{Start: start, End: end, Step: step}
-	v, _, err := p.Api.QueryRange(context.TODO(), query, r)
+	v, _, err := p.api.QueryRange(context.TODO(), query, r)
 	if err != nil {
 		return v, err
 	}
@@ -84,7 +84,7 @@ func (p *Prometheus) QueryRange(query string, start, end time.Time, step time.Du
 
 // Verifies prometheus connection
 func (p *Prometheus) verifyConnection() error {
-	_, err := p.Api.Runtimeinfo(context.TODO())
+	_, err := p.api.Runtimeinfo(context.TODO())
 	if err != nil {
 		return err
 	}
