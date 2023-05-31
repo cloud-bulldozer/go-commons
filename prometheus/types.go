@@ -22,7 +22,7 @@ import (
 
 // Prometheus describes the prometheus connection
 type Prometheus struct {
-	Api      apiv1.API
+	api      apiv1.API
 	Endpoint string
 }
 
