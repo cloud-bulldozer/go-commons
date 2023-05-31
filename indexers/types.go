@@ -24,7 +24,7 @@ const (
 	LocalIndexer IndexerType = "local"
 )
 
-// Indexer indexer interface
+// Indexer interface
 type Indexer interface {
 	Index([]interface{}, IndexingOpts) (string, error)
 	new(IndexerConfig) error
@@ -47,12 +47,8 @@ type IndexerConfig struct {
 	Servers []string `yaml:"esServers"`
 	// Index index to send documents to server
 	Index string `yaml:"defaultIndex"`
-	// Port indexer port
-	Port int `yaml:"port"`
 	// InsecureSkipVerify disable TLS ceriticate verification
 	InsecureSkipVerify bool `yaml:"insecureSkipVerify"`
-	// Enabled flag to enable indexer
-	Enabled bool `yaml:"enabled"`
 	// Directory to save metrics files in
 	MetricsDirectory string `yaml:"metricsDirectory"`
 	// Create tarball
