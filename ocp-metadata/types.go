@@ -24,7 +24,6 @@ const (
 	completedUpdate    = "Completed"
 	workerNodeSelector = "node-role.kubernetes.io/worker=,node-role.kubernetes.io/infra!=,node-role.kubernetes.io/workload!="
 	monitoringNs       = "openshift-monitoring"
-	metadataMetricName = "clusterMetadata"
 	tokenExpiration    = 10 * time.Hour
 )
 

@@ -50,7 +50,7 @@ func NewMetadata(restConfig *rest.Config) (Metadata, error) {
 
 // GetClusterMetadata returns a clusterMetadata object from the given OCP cluster
 func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
-	metadata := ClusterMetadata{MetricName: metadataMetricName}
+	metadata := ClusterMetadata{}
 	infra, err := meta.getInfraDetails()
 	if err != nil {
 		return metadata, nil
