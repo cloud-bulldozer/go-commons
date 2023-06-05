@@ -20,6 +20,19 @@ import (
 	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
+type Aggregation string
+
+const (
+	Avg   Aggregation = "avg"
+	Max   Aggregation = "max"
+	Min   Aggregation = "min"
+	P99   Aggregation = "99"
+	P95   Aggregation = "95"
+	P90   Aggregation = "90"
+	P50   Aggregation = "50"
+	Stdev Aggregation = "stdev"
+)
+
 // Prometheus describes the prometheus connection
 type Prometheus struct {
 	api      apiv1.API
