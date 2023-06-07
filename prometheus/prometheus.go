@@ -90,8 +90,7 @@ func (p *Prometheus) QueryRangeAggregatedTS(query string, start, end time.Time, 
 	var err error
 	var datapoints []float64
 	var result float64
-	r := apiv1.Range{Start: start, End: end, Step: step}
-	v, _, err := p.api.QueryRange(context.TODO(), query, r)
+	v, err := p.QueryRange(query, start, end, step)
 	if err != nil {
 		return result, err
 	}
