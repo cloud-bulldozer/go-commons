@@ -1,4 +1,4 @@
-// Copyright 2021 The go-commons Authors.
+// Copyright 2023 The go-commons Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,19 @@ import (
 	"net/http"
 
 	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+)
+
+type Aggregation string
+
+const (
+	Avg   Aggregation = "avg"
+	Max   Aggregation = "max"
+	Min   Aggregation = "min"
+	P99   Aggregation = "99"
+	P95   Aggregation = "95"
+	P90   Aggregation = "90"
+	P50   Aggregation = "50"
+	Stdev Aggregation = "stdev"
 )
 
 // Prometheus describes the prometheus connection
