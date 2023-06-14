@@ -32,8 +32,7 @@ type Indexer interface {
 
 // Indexing options
 type IndexingOpts struct {
-	MetricName string
-	JobName    string
+	MetricName string // MetricName, required for local indexer
 }
 
 // IndexerType type of indexer
