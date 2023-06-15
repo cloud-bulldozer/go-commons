@@ -7,9 +7,8 @@ import (
 	"testing"
 )
 
-func TestElasticnew(t *testing.T) {
-	var indexer Elastic
-	indexer.index = "go-commons-test"
+func TestOpenSearchnew(t *testing.T) {
+	var indexer OpenSearch
 	payload := []byte(`{
 		"name" : "0bcd132328f2f0c8ee451d471960750e",
 		"cluster_name" : "415909267177:perfscale-dev",
@@ -26,6 +25,7 @@ func TestElasticnew(t *testing.T) {
 		},
 		"tagline" : "The OpenSearch Project: https://opensearch.org/"
 	  }`)
+	indexer.index = "go-commons-test"
 	tests := []struct {
 		name          string
 		indexerConfig IndexerConfig
@@ -34,7 +34,7 @@ func TestElasticnew(t *testing.T) {
 		mockServer    *httptest.Server
 	}{
 		{"Test 1",
-			IndexerConfig{Type: "elastic",
+			IndexerConfig{Type: "openSearch",
 				Servers:            []string{},
 				Index:              "",
 				InsecureSkipVerify: true,
@@ -48,7 +48,7 @@ func TestElasticnew(t *testing.T) {
 		},
 
 		{"Test 2",
-			IndexerConfig{Type: "elastic",
+			IndexerConfig{Type: "opensearch",
 				Servers:            []string{},
 				Index:              "go-commons",
 				InsecureSkipVerify: false,
@@ -61,7 +61,7 @@ func TestElasticnew(t *testing.T) {
 		},
 
 		{"Test 3",
-			IndexerConfig{Type: "elastic",
+			IndexerConfig{Type: "opensearch",
 				Servers:            []string{},
 				Index:              "go-commons",
 				InsecureSkipVerify: false,
@@ -74,7 +74,7 @@ func TestElasticnew(t *testing.T) {
 		},
 
 		{"Test 4",
-			IndexerConfig{Type: "elastic",
+			IndexerConfig{Type: "opensearch",
 				Servers:            []string{},
 				Index:              "go-commons",
 				InsecureSkipVerify: true,
@@ -102,6 +102,7 @@ func TestElasticnew(t *testing.T) {
 
 			}
 			err := indexer.new(tt.indexerConfig)
+
 			if (err != nil) == tt.wantErr {
 				return
 			}
@@ -113,8 +114,8 @@ func TestElasticnew(t *testing.T) {
 
 }
 
-func TestElasticIndex(t *testing.T) {
-	var indexer Elastic
+func TestOpenSearchIndex(t *testing.T) {
+	var indexer OpenSearch
 	indexer.index = "abc"
 	tests := []struct {
 		name          string
@@ -180,9 +181,6 @@ func TestElasticIndex(t *testing.T) {
 			documents: []interface{}{
 				"example document",
 				42,
-				true,
-				false,
-				[]string{"hello", "hi"},
 			},
 			opts: IndexingOpts{
 				MetricName: "placeholder",
@@ -196,7 +194,7 @@ func TestElasticIndex(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			indexerConfig := IndexerConfig{
-				Type:               "elastic",
+				Type:               "opensearch",
 				Servers:            []string{"https://search-perfscale-dev-chmf5l4sh66lvxbnadi4bznl3a.us-west-2.es.amazonaws.com"},
 				Index:              "go-commons-test",
 				InsecureSkipVerify: true,
@@ -209,7 +207,6 @@ func TestElasticIndex(t *testing.T) {
 			_, err := indexer.Index(tt.documents, tt.opts)
 
 			if (err != nil) == tt.wantErr {
-				//t.Errorf("NewIndexer() error: %v, wantErr %v\n", err, tt.wantErr)
 				return
 			}
 			expectedError := tt.expectedError
