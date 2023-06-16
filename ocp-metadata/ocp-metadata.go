@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +70,7 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	if err != nil {
 		return metadata, err
 	}
-	metadata.OCPVersion, metadata.K8SVersion = version.ocpVersion, version.k8sVersion
+	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
 	nodeInfo, err := meta.getNodesInfo()
 	if err != nil {
 		return metadata, err
@@ -205,6 +206,8 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 			break
 		}
 	}
+	shortReg, _ := regexp.Compile(`([0-9]\.[0-9]+)-*`)
+	versionInfo.ocpMajorVersion = shortReg.FindString(versionInfo.ocpVersion)
 	return versionInfo, err
 }
 

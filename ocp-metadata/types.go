@@ -53,8 +53,9 @@ type infraObj struct {
 
 // Type to store version info
 type versionObj struct {
-	ocpVersion string
-	k8sVersion string
+	ocpVersion      string
+	ocpMajorVersion string
+	k8sVersion      string
 }
 
 // Type to store cluster info
@@ -83,6 +84,7 @@ type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
 	Platform         string `json:"platform"`
 	OCPVersion       string `json:"ocpVersion"`
+	OCPMajorVersion  string `json:"ocpMajorVersion`
 	K8SVersion       string `json:"k8sVersion"`
 	MasterNodesType  string `json:"masterNodesType"`
 	WorkerNodesType  string `json:"workerNodesType"`
