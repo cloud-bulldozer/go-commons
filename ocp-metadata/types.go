@@ -84,7 +84,7 @@ type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
 	Platform         string `json:"platform"`
 	OCPVersion       string `json:"ocpVersion"`
-	OCPMajorVersion  string `json:"ocpMajorVersion`
+	OCPMajorVersion  string `json:"ocpMajorVersion"`
 	K8SVersion       string `json:"k8sVersion"`
 	MasterNodesType  string `json:"masterNodesType"`
 	WorkerNodesType  string `json:"workerNodesType"`
