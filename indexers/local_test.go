@@ -1,61 +1,42 @@
 package indexers
 
 import (
-	"fmt"
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestLocalnew(t *testing.T) {
-	tests := []struct {
-		name          string
-		indexerConfig IndexerConfig
-		wantErr       bool
-	}{
-		{
-			"Test 1",
-			IndexerConfig{Type: "elastic",
+// testing local.go
+var _ = Describe("Tests for local.go", func() {
+	Context("Default behavior of local.go, new()", func() {
+		testcase := struct {
+			indexerconfig IndexerConfig
+		}{
+			indexerconfig: IndexerConfig{Type: "elastic",
 				Servers:            []string{""},
 				Index:              "go-commons-test",
 				InsecureSkipVerify: true,
 				MetricsDirectory:   "",
 			},
-			true,
-		},
-
-		{
-			"Test 2",
-			IndexerConfig{Type: "elastic",
-				Servers:            []string{""},
-				Index:              "go-commons-test",
-				InsecureSkipVerify: true,
-				MetricsDirectory:   "placeholder",
-			},
-			false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var indexer Local
-			err := indexer.new(tt.indexerConfig)
-
-			if (err != nil) != tt.wantErr {
-				fmt.Printf("Expected Error %v, Actual Error %v", tt.wantErr, err)
-				return
-			}
+		}
+		It("returns err no metrics directory", func() {
+			var localIndexer Local
+			err := localIndexer.new(testcase.indexerconfig)
+			Expect(err).NotTo(BeNil())
 		})
-	}
-}
 
-func TestLocalIndex(t *testing.T) {
-	tests := []struct {
-		name          string
-		documents     []interface{}
-		opts          IndexingOpts
-		expectedError string
-		wantErr       bool
-	}{
-		{name: "test1",
+		It("returns nil as error", func() {
+			var localIndexer Local
+			testcase.indexerconfig.MetricsDirectory = "placeholder"
+			err := localIndexer.new(testcase.indexerconfig)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("Default behaviour of local.go, Index()", func() {
+		testcase := struct {
+			documents []interface{}
+			opts      IndexingOpts
+		}{
 			documents: []interface{}{
 				"example document",
 				42,
@@ -77,103 +58,37 @@ func TestLocalIndex(t *testing.T) {
 				MetricName: "placeholder",
 				JobName:    "",
 			},
-			expectedError: "",
-			wantErr:       false,
-		},
+		}
 
-		{name: "test2",
-			documents: []interface{}{
-				"example document",
-				42,
-				3.14,
-				false,
-				struct {
-					Name string
-					Age  int
-				}{
-					Name: "John Doe",
-					Age:  25,
-				},
-				map[string]interface{}{
-					"key1": "value1",
-					"key2": 123,
-					"key3": true,
-				}},
-			opts: IndexingOpts{
-				MetricName: "placeholder",
-				JobName:    "placeholder",
-			},
-			expectedError: "",
-			wantErr:       false,
-		},
-
-		{name: "test3",
-			documents: []interface{}{
-				"example document",
-				42,
-				3.14,
-				false,
-				struct {
-					Name string
-					Age  int
-				}{
-					Name: "John Doe",
-					Age:  25,
-				},
-				map[string]interface{}{
-					"key1": "value1",
-					"key2": 123,
-					"key3": true,
-				}},
-			opts: IndexingOpts{
-				MetricName: "placeholder",
-				JobName:    "placeholder",
-			},
-			expectedError: "",
-			wantErr:       true,
-		},
-
-		{name: "test4",
-			documents: []interface{}{
-				make(chan string),
-				"example document",
-				42,
-				3.14,
-				false,
-				struct {
-					Name string
-					Age  int
-				}{
-					Name: "John Doe",
-					Age:  25,
-				},
-				map[string]interface{}{
-					"key1": "value1",
-					"key2": 123,
-					"key3": true,
-				}},
-			opts: IndexingOpts{
-				MetricName: "placeholder",
-				JobName:    "placeholder",
-			},
-			expectedError: "",
-			wantErr:       true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It("No err is returned", func() {
 			var indexer Local
 			indexer.metricsDirectory = "placeholder"
-			if tt.name == "test3" {
-				indexer.metricsDirectory = "abc"
-			}
-			_, err := indexer.Index(tt.documents, tt.opts)
-
-			if (err != nil) != tt.wantErr {
-				fmt.Printf("Expected Error %v, Actual Error %v", tt.wantErr, err)
-				return
-			}
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(BeNil())
 		})
-	}
-}
+
+		It("No err is returned", func() {
+			var indexer Local
+			indexer.metricsDirectory = "placeholder"
+			testcase.opts.JobName = "placeholder"
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(BeNil())
+		})
+
+		It("Err is returned metricsdirectory has fault", func() {
+			var indexer Local
+			indexer.metricsDirectory = "abc"
+			testcase.opts.JobName = "placeholder"
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("Err is returned by documents not processed", func() {
+			testcase.documents = append(testcase.documents, make(chan string))
+			var indexer Local
+			indexer.metricsDirectory = "placeholder"
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).NotTo(BeNil())
+		})
+	})
+})
