@@ -1,6 +1,7 @@
 package indexers
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -42,48 +43,41 @@ var _ = Describe("Tests for opensearch.go", func() {
 				w.Write(payload)
 			})),
 		}
-
+		var indexer OpenSearch
+		indexer.index = "go-commons-test"
 		It("Returns error", func() {
-			var indexer OpenSearch
-			indexer.index = "go-commons-test"
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 			}))
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("OpenSearch health check failed: cannot retrieve information from OpenSearch")))
 		})
 
 		It("when no url is passed", func() {
-			var indexer OpenSearch
-			indexer.index = "go-commons-test"
 			err := indexer.new(testcase.indexerConfig)
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusGatewayTimeout)
 			}))
-			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("connect: connection refused"))
 		})
 
 		It("Returns err not a valid URL in env variable", func() {
-			var indexer OpenSearch
-			indexer.index = "go-commons-test"
 			testcase.indexerConfig.Servers = []string{}
 			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
 			defer os.Unsetenv("ELASTICSEARCH_URL")
 			defer testcase.mockServer.Close()
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("error creating the OpenSearch client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
 		})
 
 		It("Returns err no index name", func() {
-			var indexer OpenSearch
-			indexer.index = "go-commons-test"
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Index = ""
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("index name not specified")))
 		})
 
 	})
@@ -115,18 +109,16 @@ var _ = Describe("Tests for opensearch.go", func() {
 				JobName:    "placeholder",
 			},
 		}
-
+		var indexer OpenSearch
 		It("No err returned", func() {
-			var indexer OpenSearch
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
-			var indexer OpenSearch
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Cannot encode document"))
 		})
 
 	})

@@ -1,6 +1,7 @@
 package indexers
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -50,7 +51,7 @@ var _ = Describe("Tests for elastic.go", func() {
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("unexpected ES status code: 400")))
 		})
 
 		It("when no url is passed", func() {
@@ -58,7 +59,8 @@ var _ = Describe("Tests for elastic.go", func() {
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusGatewayTimeout)
 			}))
-			Expect(err).NotTo(BeNil())
+			//using .Error() to convert to string as the error which is generated contains port and is dynamic
+			Expect(err.Error()).To(ContainSubstring("connect: connection refused"))
 		})
 
 		It("Returns err not passing a valid URL in env variable", func() {
@@ -67,7 +69,7 @@ var _ = Describe("Tests for elastic.go", func() {
 			defer os.Unsetenv("ELASTICSEARCH_URL")
 			defer testcase.mockServer.Close()
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("error creating the ES client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
 		})
 
 		It("Returns err no index name", func() {
@@ -75,7 +77,8 @@ var _ = Describe("Tests for elastic.go", func() {
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Index = ""
 			err := indexer.new(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+
+			Expect(err).To(BeEquivalentTo(errors.New("index name not specified")))
 		})
 
 	})
@@ -114,10 +117,37 @@ var _ = Describe("Tests for elastic.go", func() {
 			Expect(err).To(BeNil())
 		})
 
+		// It("No err returned", func() {
+
+		// 	testcase.documents = []interface{}{
+		// 		map[string]interface{}{
+		// 			"_index":   "dummy",
+		// 			"_id":      "Vdc8g4IBYDIaJD7xG1yv",
+		// 			"_version": 1,
+		// 			"_score":   nil,
+		// 			"_source": map[string]interface{}{
+		// 				"timestamp":       "2022-08-09T15:32:10.784425",
+		// 				"uuid":            "de4f28de-93de-4ab1-90dc-bdd67653b895",
+		// 				"connection_time": 0.00347347604110837,
+		// 			},
+		// 			"fields": map[string]interface{}{
+		// 				"timestamp": []string{
+		// 					"2022-08-09T15:32:10.784Z"},
+		// 			},
+		// 			"sort": []int{
+		// 				1660059130784,
+		// 			},
+		// 		},
+		// 	}
+
+		// 	_, err := indexer.Index(testcase.documents, testcase.opts)
+		// 	Expect(err).To(BeNil())
+		// })
+
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Cannot encode document"))
 		})
 
 	})

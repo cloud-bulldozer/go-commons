@@ -1,6 +1,7 @@
 package indexers
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 
@@ -55,7 +56,8 @@ var _ = Describe("Factory.go Unit Tests: NewIndexer()", func() {
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			_, err := NewIndexer(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+
+			Expect(err).To(BeEquivalentTo(errors.New("unexpected ES status code: 502")))
 		})
 
 		It("returns indexer and err unknown indexer", func() {
@@ -63,7 +65,7 @@ var _ = Describe("Factory.go Unit Tests: NewIndexer()", func() {
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Type = "Unknown"
 			_, err := NewIndexer(testcase.indexerConfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("Indexer not found: Unknown")))
 		})
 
 	})

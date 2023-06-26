@@ -1,6 +1,9 @@
 package indexers
 
 import (
+	"errors"
+	"log"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -21,7 +24,7 @@ var _ = Describe("Tests for local.go", func() {
 		var localIndexer Local
 		It("returns err no metrics directory", func() {
 			err := localIndexer.new(testcase.indexerconfig)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(BeEquivalentTo(errors.New("directory name not specified")))
 		})
 
 		It("returns nil as error", func() {
@@ -61,7 +64,6 @@ var _ = Describe("Tests for local.go", func() {
 		var indexer Local
 
 		It("No err is returned", func() {
-
 			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
@@ -78,14 +80,16 @@ var _ = Describe("Tests for local.go", func() {
 			indexer.metricsDirectory = "abc"
 			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).NotTo(BeNil())
+
+			Expect(err).To(BeEquivalentTo(errors.New("Error creating metrics file abc/placeholder-placeholder.json: open abc/placeholder-placeholder.json: no such file or directory")))
 		})
 
 		It("Err is returned by documents not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).NotTo(BeNil())
+			log.Println(err)
+			Expect(err).To(BeEquivalentTo(errors.New("JSON encoding error: json: unsupported type: chan string")))
 		})
 	})
 })
