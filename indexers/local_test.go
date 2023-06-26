@@ -2,7 +2,6 @@ package indexers
 
 import (
 	"errors"
-	"log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,17 +10,22 @@ import (
 // testing local.go
 var _ = Describe("Tests for local.go", func() {
 	Context("Default behavior of local.go, new()", func() {
-		testcase := struct {
+		type newtestcase struct {
 			indexerconfig IndexerConfig
-		}{
-			indexerconfig: IndexerConfig{Type: "elastic",
-				Servers:            []string{""},
-				Index:              "go-commons-test",
-				InsecureSkipVerify: true,
-				MetricsDirectory:   "",
-			},
 		}
+		var testcase newtestcase
 		var localIndexer Local
+		BeforeEach(func() {
+			testcase = newtestcase{
+				indexerconfig: IndexerConfig{Type: "elastic",
+					Servers:            []string{""},
+					Index:              "go-commons-test",
+					InsecureSkipVerify: true,
+					MetricsDirectory:   "",
+				},
+			}
+		})
+
 		It("returns err no metrics directory", func() {
 			err := localIndexer.new(testcase.indexerconfig)
 			Expect(err).To(BeEquivalentTo(errors.New("directory name not specified")))
@@ -35,33 +39,33 @@ var _ = Describe("Tests for local.go", func() {
 	})
 
 	Context("Default behaviour of local.go, Index()", func() {
-		testcase := struct {
-			documents []interface{}
-			opts      IndexingOpts
-		}{
-			documents: []interface{}{
-				"example document",
-				42,
-				3.14,
-				false,
-				struct {
-					Name string
-					Age  int
-				}{
-					Name: "John Doe",
-					Age:  25,
-				},
-				map[string]interface{}{
-					"key1": "value1",
-					"key2": 123,
-					"key3": true,
-				}},
-			opts: IndexingOpts{
-				MetricName: "placeholder",
-				JobName:    "",
-			},
-		}
+		var testcase indexMethodTestcase
 		var indexer Local
+		BeforeEach(func() {
+			testcase = indexMethodTestcase{
+				documents: []interface{}{
+					"example document",
+					42,
+					3.14,
+					false,
+					struct {
+						Name string
+						Age  int
+					}{
+						Name: "John Doe",
+						Age:  25,
+					},
+					map[string]interface{}{
+						"key1": "value1",
+						"key2": 123,
+						"key3": true,
+					}},
+				opts: IndexingOpts{
+					MetricName: "placeholder",
+					JobName:    "",
+				},
+			}
+		})
 
 		It("No err is returned", func() {
 			indexer.metricsDirectory = "placeholder"
@@ -88,7 +92,6 @@ var _ = Describe("Tests for local.go", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			log.Println(err)
 			Expect(err).To(BeEquivalentTo(errors.New("JSON encoding error: json: unsupported type: chan string")))
 		})
 	})

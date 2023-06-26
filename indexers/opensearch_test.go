@@ -13,38 +13,22 @@ import (
 // tests for opensearch.go
 var _ = Describe("Tests for opensearch.go", func() {
 	Context("Tests for new()", func() {
-		payload := []byte(`{
-			"name" : "0bcd132328f2f0c8ee451d471960750e",
-			"cluster_name" : "415909267177:perfscale-dev",
-			"cluster_uuid" : "Xz2IU4etSieAeaO2j-QCUw",
-			"version" : {
-			  "number" : "7.10.2",
-			  "build_type" : "tar",
-			  "build_hash" : "unknown",
-			  "build_date" : "2023-03-22T14:16:51.874273Z",
-			  "build_snapshot" : false,
-			  "lucene_version" : "9.3.0",
-			  "minimum_wire_compatibility_version" : "7.10.0",
-			  "minimum_index_compatibility_version" : "7.0.0"
-			},
-			"tagline" : "The OpenSearch Project: https://opensearch.org/"
-		  }`)
-		testcase := struct {
-			indexerConfig IndexerConfig
-			mockServer    *httptest.Server
-		}{
-			indexerConfig: IndexerConfig{Type: "opensearch",
-				Servers:            []string{},
-				Index:              "go-commons-test",
-				InsecureSkipVerify: true,
-			},
-			mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				w.Write(payload)
-			})),
-		}
+		var testcase newMethodTestcase
 		var indexer OpenSearch
-		indexer.index = "go-commons-test"
+		BeforeEach(func() {
+			testcase = newMethodTestcase{
+				indexerConfig: IndexerConfig{Type: "opensearch",
+					Servers:            []string{},
+					Index:              "go-commons-test",
+					InsecureSkipVerify: true,
+				},
+				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write(payload)
+				})),
+			}
+			indexer.index = "go-commons-test"
+		})
 		It("Returns error", func() {
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
@@ -83,32 +67,33 @@ var _ = Describe("Tests for opensearch.go", func() {
 	})
 
 	Context("Tests for Index()", func() {
-		testcase := struct {
-			documents []interface{}
-			opts      IndexingOpts
-		}{
-			documents: []interface{}{
-				"example document",
-				42,
-				3.14,
-				false,
-				struct {
-					Name string
-					Age  int
-				}{
-					Name: "John Doe",
-					Age:  25,
+		var testcase indexMethodTestcase
+		BeforeEach(func() {
+			testcase = indexMethodTestcase{
+				documents: []interface{}{
+					"example document",
+					42,
+					3.14,
+					false,
+					struct {
+						Name string
+						Age  int
+					}{
+						Name: "John Doe",
+						Age:  25,
+					},
+					map[string]interface{}{
+						"key1": "value1",
+						"key2": 123,
+						"key3": true,
+					}},
+				opts: IndexingOpts{
+					MetricName: "placeholder",
+					JobName:    "placeholder",
 				},
-				map[string]interface{}{
-					"key1": "value1",
-					"key2": 123,
-					"key3": true,
-				}},
-			opts: IndexingOpts{
-				MetricName: "placeholder",
-				JobName:    "placeholder",
-			},
-		}
+			}
+		})
+
 		var indexer OpenSearch
 		It("No err returned", func() {
 			_, err := indexer.Index(testcase.documents, testcase.opts)
