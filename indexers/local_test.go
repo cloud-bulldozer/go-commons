@@ -1,7 +1,7 @@
 package indexers
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -18,14 +18,13 @@ var _ = Describe("Tests for local.go", func() {
 				MetricsDirectory:   "",
 			},
 		}
+		var localIndexer Local
 		It("returns err no metrics directory", func() {
-			var localIndexer Local
 			err := localIndexer.new(testcase.indexerconfig)
 			Expect(err).NotTo(BeNil())
 		})
 
 		It("returns nil as error", func() {
-			var localIndexer Local
 			testcase.indexerconfig.MetricsDirectory = "placeholder"
 			err := localIndexer.new(testcase.indexerconfig)
 			Expect(err).To(BeNil())
@@ -59,16 +58,16 @@ var _ = Describe("Tests for local.go", func() {
 				JobName:    "",
 			},
 		}
+		var indexer Local
 
 		It("No err is returned", func() {
-			var indexer Local
+
 			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("No err is returned", func() {
-			var indexer Local
 			indexer.metricsDirectory = "placeholder"
 			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
@@ -76,7 +75,6 @@ var _ = Describe("Tests for local.go", func() {
 		})
 
 		It("Err is returned metricsdirectory has fault", func() {
-			var indexer Local
 			indexer.metricsDirectory = "abc"
 			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
@@ -85,7 +83,6 @@ var _ = Describe("Tests for local.go", func() {
 
 		It("Err is returned by documents not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
-			var indexer Local
 			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).NotTo(BeNil())

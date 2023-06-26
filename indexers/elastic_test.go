@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -41,10 +41,9 @@ var _ = Describe("Tests for elastic.go", func() {
 				w.Write(payload)
 			})),
 		}
-
+		var indexer Elastic
+		indexer.index = "go-commons-test"
 		It("Returns error status bad request", func() {
-			var indexer Elastic
-			indexer.index = "go-commons-test"
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 			}))
@@ -55,8 +54,6 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("when no url is passed", func() {
-			var indexer Elastic
-			indexer.index = "go-commons-test"
 			err := indexer.new(testcase.indexerConfig)
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusGatewayTimeout)
@@ -65,8 +62,6 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("Returns err not passing a valid URL in env variable", func() {
-			var indexer Elastic
-			indexer.index = "go-commons-test"
 			testcase.indexerConfig.Servers = []string{}
 			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
 			defer os.Unsetenv("ELASTICSEARCH_URL")
@@ -76,8 +71,6 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("Returns err no index name", func() {
-			var indexer Elastic
-			indexer.index = "go-commons-test"
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Index = ""
@@ -114,16 +107,15 @@ var _ = Describe("Tests for elastic.go", func() {
 				JobName:    "placeholder",
 			},
 		}
+		var indexer Elastic
 
 		It("No err returned", func() {
-			var indexer Elastic
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
-			var indexer Elastic
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).NotTo(BeNil())
 		})

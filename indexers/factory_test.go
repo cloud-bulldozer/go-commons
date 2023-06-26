@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -41,7 +41,6 @@ var _ = Describe("Factory.go Unit Tests: NewIndexer()", func() {
 		})),
 	}
 	Context("Default behaviour of NewIndexer()", func() {
-
 		It("returns indexer and nil", func() {
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
