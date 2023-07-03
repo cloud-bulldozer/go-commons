@@ -45,12 +45,10 @@ func (l *Local) new(indexerConfig IndexerConfig) error {
 
 // Index uses generates a local file with the given name and metrics
 func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error) {
-	var metricName string
-	if opts.JobName != "" {
-		metricName = fmt.Sprintf("%s-%s.json", opts.MetricName, opts.JobName)
-	} else {
-		metricName = fmt.Sprintf("%s.json", opts.MetricName)
+	if opts.MetricName == "" {
+		return "", fmt.Errorf("MetricName shouldn't be empty")
 	}
+	metricName := fmt.Sprintf("%s.json", opts.MetricName)
 	filename := path.Join(l.metricsDirectory, metricName)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -61,5 +59,5 @@ func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error
 	if err := jsonEnc.Encode(documents); err != nil {
 		return "", fmt.Errorf("JSON encoding error: %s", err)
 	}
-	return "", nil
+	return fmt.Sprintf("File %s created with %d documents", filename, len(documents)), nil
 }

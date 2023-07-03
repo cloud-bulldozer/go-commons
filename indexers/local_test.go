@@ -2,6 +2,8 @@ package indexers
 
 import (
 	"errors"
+	"log"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -41,7 +43,12 @@ var _ = Describe("Tests for local.go", func() {
 	Context("Default behaviour of local.go, Index()", func() {
 		var testcase indexMethodTestcase
 		var indexer Local
+		indexer.metricsDirectory = "placeholder"
 		BeforeEach(func() {
+			err := os.MkdirAll(indexer.metricsDirectory, 0744)
+			if err != nil {
+				log.Fatal(err)
+			}
 			testcase = indexMethodTestcase{
 				documents: []interface{}{
 					"example document",
@@ -62,35 +69,28 @@ var _ = Describe("Tests for local.go", func() {
 					}},
 				opts: IndexingOpts{
 					MetricName: "placeholder",
-					JobName:    "",
 				},
 			}
 		})
 
 		It("No err is returned", func() {
-			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("No err is returned", func() {
-			indexer.metricsDirectory = "placeholder"
-			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("Err is returned metricsdirectory has fault", func() {
 			indexer.metricsDirectory = "abc"
-			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-
-			Expect(err).To(BeEquivalentTo(errors.New("Error creating metrics file abc/placeholder-placeholder.json: open abc/placeholder-placeholder.json: no such file or directory")))
+			Expect(err).To(BeEquivalentTo(errors.New("Error creating metrics file abc/placeholder.json: open abc/placeholder.json: no such file or directory")))
 		})
 
 		It("Err is returned by documents not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
-			indexer.metricsDirectory = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeEquivalentTo(errors.New("JSON encoding error: json: unsupported type: chan string")))
 		})
