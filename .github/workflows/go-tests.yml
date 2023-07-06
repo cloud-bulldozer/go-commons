@@ -1,0 +1,26 @@
+name: GO Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download Dependencies
+        run: go mod download
+      - name: Install ginkgo
+        run: go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
+      - name: Run Unit Tests
+        run: |
+          ginkgo -r --randomize-all --randomize-suites --fail-on-pending --cover --trace --v --coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage-report.html
