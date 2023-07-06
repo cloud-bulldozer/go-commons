@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -24,7 +25,10 @@ var _ = Describe("Tests for opensearch.go", func() {
 				},
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
-					w.Write(payload)
+					_, err := w.Write(payload)
+					if err != nil {
+						log.Printf("Error while sending payload to http mock server: %v", err)
+					}
 				})),
 			}
 			indexer.index = "go-commons-test"
@@ -89,7 +93,6 @@ var _ = Describe("Tests for opensearch.go", func() {
 					}},
 				opts: IndexingOpts{
 					MetricName: "placeholder",
-					JobName:    "placeholder",
 				},
 			}
 		})

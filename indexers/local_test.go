@@ -62,7 +62,6 @@ var _ = Describe("Tests for local.go", func() {
 					}},
 				opts: IndexingOpts{
 					MetricName: "placeholder",
-					JobName:    "",
 				},
 			}
 		})
@@ -75,16 +74,13 @@ var _ = Describe("Tests for local.go", func() {
 
 		It("No err is returned", func() {
 			indexer.metricsDirectory = "placeholder"
-			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
 
 		It("Err is returned metricsdirectory has fault", func() {
 			indexer.metricsDirectory = "abc"
-			testcase.opts.JobName = "placeholder"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-
 			Expect(err).To(BeEquivalentTo(errors.New("Error creating metrics file abc/placeholder-placeholder.json: open abc/placeholder-placeholder.json: no such file or directory")))
 		})
 
