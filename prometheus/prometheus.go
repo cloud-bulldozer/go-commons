@@ -112,7 +112,7 @@ func (p *Prometheus) QueryRangeAggregatedTS(query string, start, end time.Time, 
 		result, err = stats.Min(datapoints)
 	case P99, P95, P90, P50:
 		percentile, _ := strconv.ParseFloat(string(aggregation), 64)
-		stats.Percentile(datapoints, percentile)
+		result, err = stats.Percentile(datapoints, percentile)
 	case Stdev:
 		result, err = stats.StandardDeviation(datapoints)
 	default:
