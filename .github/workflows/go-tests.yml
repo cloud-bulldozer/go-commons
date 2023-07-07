@@ -23,4 +23,24 @@ jobs:
       - name: Run Unit Tests
         run: |
           ginkgo -r --randomize-all --randomize-suites --fail-on-pending --cover --trace --v --coverprofile=coverage.out ./...
-          go tool cover -html=coverage.out -o coverage-report.html
+      - name: Upload Coverage Report to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: coverage.out
+          flag: unittests
+      - name: Generate Coverage Comment
+        id: generate-comment
+        run: |
+          COVERAGE_PERCENT=$(go tool cover -func=coverage.out | grep total | awk '{print $NF}')
+          COMMENT_MESSAGE="Code coverage: $COVERAGE_PERCENT%"
+          echo "::set-output name=comment::$COMMENT_MESSAGE"
+      - name: Comment on Pull Request
+        run: |
+          COMMENT_BODY="${{ steps.generate-comment.outputs.comment }}"
+          curl \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\":\"$COMMENT_BODY\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
