@@ -51,15 +51,16 @@ var _ = Describe("Tests for elastic.go", func() {
 		var cfg elasticsearch.Config
 
 		BeforeEach(func() {
-			client, _ = elasticsearch.NewClient(cfg)
-			query = "_all"
-			field = ""
 			cfg = elasticsearch.Config{
 				Addresses: []string{
 					"https://justAnotherRandomLinkForNoReason.com",
 				},
 				Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 			}
+			client, _ = elasticsearch.NewClient(cfg)
+			query = "_all"
+			field = ""
+
 			c = 0
 		})
 		It("Test1 error 404", func() {
@@ -82,6 +83,7 @@ var _ = Describe("Tests for elastic.go", func() {
 		It("Test2 no error", func() {
 			client.Search = searchFunc
 			comparator = NewComparator(*client, "_all")
+
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
