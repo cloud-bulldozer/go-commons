@@ -219,24 +219,26 @@ func (meta *Metadata) getNodesInfo() (nodeInfo, error) {
 		return nodeInfoData, err
 	}
 	nodeInfoData.totalNodes = len(nodes.Items)
+newNode:
 	for _, node := range nodes.Items {
 		for k := range node.Labels {
 			switch k {
 			case "node-role.kubernetes.io/master":
 				nodeInfoData.masterCount++
 				nodeInfoData.masterType = node.Labels["node.kubernetes.io/instance-type"]
-			case "node-role.kubernetes.io/worker":
-				// Discard nodes with infra or workload label
-				for k := range node.Labels {
-					if k != "node-role.kubernetes.io/infra" && k != "node-role.kubernetes.io/workload" {
-						nodeInfoData.workerCount++
-						nodeInfoData.workerType = node.Labels["node.kubernetes.io/instance-type"]
-						break
-					}
-				}
 			case "node-role.kubernetes.io/infra":
 				nodeInfoData.infraCount++
 				nodeInfoData.infraType = node.Labels["node.kubernetes.io/instance-type"]
+			case "node-role.kubernetes.io/worker":
+				// We iterate over all node labels, and if we detect that the node has an infra or workload label we skip it
+				// from the worker count
+				for label := range node.Labels {
+					if label == "node-role.kubernetes.io/infra" || label == "node-role.kubernetes.io/workload" {
+						continue newNode
+					}
+				}
+				nodeInfoData.workerType = node.Labels["node.kubernetes.io/instance-type"]
+				nodeInfoData.workerCount++
 			}
 		}
 	}
