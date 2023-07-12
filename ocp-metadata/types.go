@@ -68,17 +68,6 @@ type clusterVersion struct {
 	} `json:"status"`
 }
 
-// Type to store node info
-type nodeInfo struct {
-	workerCount int
-	infraCount  int
-	masterCount int
-	totalNodes  int
-	masterType  string
-	workerType  string
-	infraType   string
-}
-
 // Type to store cluster metadata
 type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
@@ -92,6 +81,7 @@ type ClusterMetadata struct {
 	InfraNodesType   string `json:"infraNodesType"`
 	WorkerNodesCount int    `json:"workerNodesCount"`
 	InfraNodesCount  int    `json:"infraNodesCount"`
+	OtherNodesCount  int    `json:"otherNodesCount"`
 	TotalNodes       int    `json:"totalNodes"`
 	SDNType          string `json:"sdnType"`
 	ClusterName      string `json:"clusterName"`
