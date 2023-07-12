@@ -71,17 +71,9 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 		return metadata, err
 	}
 	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
-	nodeInfo, err := meta.getNodesInfo()
-	if err != nil {
+	if meta.getNodesInfo(&metadata) != nil {
 		return metadata, err
 	}
-	metadata.TotalNodes = nodeInfo.totalNodes
-	metadata.MasterNodesCount = nodeInfo.masterCount
-	metadata.WorkerNodesCount = nodeInfo.workerCount
-	metadata.InfraNodesCount = nodeInfo.infraCount
-	metadata.MasterNodesType = nodeInfo.masterType
-	metadata.WorkerNodesType = nodeInfo.workerType
-	metadata.InfraNodesType = nodeInfo.infraType
 	return metadata, err
 }
 
@@ -212,35 +204,29 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 }
 
 // getNodesInfo returns node information
-func (meta *Metadata) getNodesInfo() (nodeInfo, error) {
-	var nodeInfoData nodeInfo
+func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
 	nodes, err := meta.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nodeInfoData, err
+		return err
 	}
-	nodeInfoData.totalNodes = len(nodes.Items)
+	clusterMetadata.TotalNodes = len(nodes.Items)
+	// When the master label is found, the node is considered a master, regarldess of other labels the node could have
+	// similar logic happens with the infra nodes
 	for _, node := range nodes.Items {
-		for k := range node.Labels {
-			switch k {
-			case "node-role.kubernetes.io/master":
-				nodeInfoData.masterCount++
-				nodeInfoData.masterType = node.Labels["node.kubernetes.io/instance-type"]
-			case "node-role.kubernetes.io/worker":
-				// Discard nodes with infra or workload label
-				for k := range node.Labels {
-					if k != "node-role.kubernetes.io/infra" && k != "node-role.kubernetes.io/workload" {
-						nodeInfoData.workerCount++
-						nodeInfoData.workerType = node.Labels["node.kubernetes.io/instance-type"]
-						break
-					}
-				}
-			case "node-role.kubernetes.io/infra":
-				nodeInfoData.infraCount++
-				nodeInfoData.infraType = node.Labels["node.kubernetes.io/instance-type"]
-			}
+		if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok { // Check for master role
+			clusterMetadata.MasterNodesCount++
+			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
+		} else if _, ok := node.Labels["node-role.kubernetes.io/infra"]; ok { // Check for infra role
+			clusterMetadata.InfraNodesCount++
+			clusterMetadata.InfraNodesType = node.Labels["node.kubernetes.io/instance-type"]
+		} else if _, ok := node.Labels["node-role.kubernetes.io/worker"]; ok { // Check for worker role
+			clusterMetadata.WorkerNodesCount++
+			clusterMetadata.WorkerNodesType = node.Labels["node.kubernetes.io/instance-type"]
+		} else {
+			clusterMetadata.OtherNodesCount++
 		}
 	}
-	return nodeInfoData, err
+	return err
 }
 
 // getSDNInfo returns SDN type
