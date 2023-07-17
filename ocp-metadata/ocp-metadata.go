@@ -22,6 +22,7 @@ import (
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -216,6 +217,11 @@ func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
 		if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok { // Check for master role
 			clusterMetadata.MasterNodesCount++
 			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
+			if _, ok := node.Labels["node-role.kubernetes.io/worker"]; ok {
+				if len(node.Spec.Taints) == 0 { // When mastersSchedulable is true, master nodes have at least one taint
+					clusterMetadata.WorkerNodesCount++
+				}
+			}
 		} else if _, ok := node.Labels["node-role.kubernetes.io/infra"]; ok { // Check for infra role
 			clusterMetadata.InfraNodesCount++
 			clusterMetadata.InfraNodesType = node.Labels["node.kubernetes.io/instance-type"]
