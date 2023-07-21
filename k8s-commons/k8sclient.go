@@ -17,6 +17,24 @@ type PodParams struct {
 	ResourceVersion string
 }
 
+type ResourceType int
+
+const (
+	Deployment ResourceType = iota
+	ReplicaSet
+	ReplicationController
+	StatefulSet
+	DaemonSet
+	Pod
+	Build
+	BuildConfig
+	VirtualMachine
+	VirtualMachineInstance
+	VirtualMachineInstanceReplicaSet
+	Job
+	PersistentVolumeClaim
+)
+
 func (c *K8SClient) GetVersion() string {
 	return c.client.RESTClient().APIVersion().Version
 }

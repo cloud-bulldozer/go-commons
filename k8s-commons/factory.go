@@ -2,6 +2,7 @@ package k8scommons
 
 import (
 	"context"
+	"time"
 
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -17,6 +18,8 @@ type KClient interface {
 	GetZones(ctx context.Context) (map[string]int, error)
 	IsClusterMultiAZ(ctx context.Context) (bool, error)
 	GetZoneForNode(ctx context.Context, nodeName string) (string, error)
+	// Waiters
+	WaitForObject(ctx context.Context, namespace string, resourceType ResourceType, name string, timeout time.Duration) (bool, error)
 }
 
 func NewKClient(configOverrides clientcmd.ConfigOverrides) (KClient, error) {
