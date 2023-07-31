@@ -58,9 +58,10 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 		return metadata, nil
 	}
 	metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
+	metadata.ClusterType = "self-managed"
 	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
 		if v.Key == "red-hat-clustertype" {
-			metadata.Platform = v.Value
+			metadata.ClusterType = v.Value
 		}
 	}
 	metadata.SDNType, err = meta.getSDNInfo()
