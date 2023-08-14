@@ -19,10 +19,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/montanaflynn/stats"
 	api "github.com/prometheus/client_golang/api"
 	apiv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -82,43 +80,6 @@ func (p *Prometheus) QueryRange(query string, start, end time.Time, step time.Du
 		return v, err
 	}
 	return v, nil
-}
-
-// QueryRangeAggregation returns the aggregation from the given query
-// if the query returns multiple timeseries, their data points are aggregated into a single one
-func (p *Prometheus) QueryRangeAggregatedTS(query string, start, end time.Time, step time.Duration, aggregation Aggregation) (float64, error) {
-	var err error
-	var datapoints []float64
-	var result float64
-	v, err := p.QueryRange(query, start, end, step)
-	if err != nil {
-		return result, err
-	}
-	data, ok := v.(model.Matrix)
-	if !ok {
-		return result, fmt.Errorf("result format is not a range vector: %s", data.Type().String())
-	}
-	for _, ts := range data {
-		for _, dp := range ts.Values {
-			datapoints = append(datapoints, float64(dp.Value))
-		}
-	}
-	switch aggregation {
-	case Avg:
-		result, err = stats.Mean(datapoints)
-	case Max:
-		result, err = stats.Max(datapoints)
-	case Min:
-		result, err = stats.Min(datapoints)
-	case P99, P95, P90, P50:
-		percentile, _ := strconv.ParseFloat(string(aggregation), 64)
-		result, err = stats.Percentile(datapoints, percentile)
-	case Stdev:
-		result, err = stats.StandardDeviation(datapoints)
-	default:
-		return result, fmt.Errorf("aggregation not supported: %s", aggregation)
-	}
-	return result, err
 }
 
 // Verifies prometheus connection

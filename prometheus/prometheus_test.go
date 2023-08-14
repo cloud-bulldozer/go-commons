@@ -1,7 +1,6 @@
 package prometheus
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -108,82 +107,6 @@ var _ = Describe("Tests for Prometheus", func() {
 			Expect(err.Error()).To(ContainSubstring("Post \"/api/v1/query_range\": unsupported protocol scheme \"\""))
 		})
 
-	})
-
-	Context("Test for QueryRangeAggregatedTS", func() {
-		var mockAPI *MockAPI
-		var query string
-		var start, end time.Time
-		var step time.Duration
-		var p Prometheus
-		BeforeEach(func() {
-			mockAPI = new(MockAPI)
-			mockAPI.flag = 1
-			query = "your_query"
-			start := time.Now()
-			end = start.Add(time.Hour)
-			step = time.Minute
-			p = Prometheus{api: mockAPI}
-			count = 0
-		})
-
-		It("Test1 queryRange error", func() {
-			mockAPI.flag = 2
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Avg)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeEquivalentTo(errors.New("sample error")))
-		})
-
-		It("Test2 for Avg", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Avg)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeNil())
-		})
-
-		It("Test3 error when v not in matrix", func() {
-			mockAPI.flag = 0
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Avg)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeEquivalentTo(errors.New("result format is not a range vector: matrix")))
-		})
-
-		It("Test4 for Min", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Min)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeNil())
-		})
-
-		It("Test5 for Max", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Max)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeNil())
-		})
-
-		It("Test6 for Stdev", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, Stdev)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeNil())
-		})
-
-		It("Test7 for P50 etc.", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, P50)
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeNil())
-		})
-
-		It("Test6 no standard aggregator", func() {
-			_, err := p.QueryRangeAggregatedTS(query, start, end, step, "placeholder")
-			//Asserting no of times mocks are called
-			Expect(count).To(BeEquivalentTo(1))
-			Expect(err).To(BeEquivalentTo(errors.New("aggregation not supported: placeholder")))
-		})
 	})
 
 	Context("Tests for verifyConnection()", func() {
