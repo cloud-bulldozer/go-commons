@@ -33,7 +33,7 @@ jobs:
         id: generate-comment
         run: |
           COVERAGE_PERCENT=$(go tool cover -func=coverage.out | grep total | awk '{print $NF}')
-          COMMENT_MESSAGE="Code coverage: $COVERAGE_PERCENT%"
+          COMMENT_MESSAGE="Code coverage: $COVERAGE_PERCENT"
           echo "::set-output name=comment::$COMMENT_MESSAGE"
       - name: Comment on Pull Request
         run: |

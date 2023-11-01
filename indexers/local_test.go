@@ -72,6 +72,12 @@ var _ = Describe("Tests for local.go", func() {
 				},
 			}
 		})
+		AfterEach(func() {
+			err := os.RemoveAll(indexer.metricsDirectory)
+			if err != nil {
+				log.Fatal(err)
+			}
+		})
 
 		It("No err is returned", func() {
 			_, err := indexer.Index(testcase.documents, testcase.opts)

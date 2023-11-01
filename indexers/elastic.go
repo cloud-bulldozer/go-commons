@@ -85,6 +85,10 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	var statString string
 	var indexerStatsLock sync.Mutex
 	indexerStats := make(map[string]int)
+
+	if len(documents) <= 0 {
+		return fmt.Sprintf("Indexing skipped due to %v docs", len(documents)), nil
+	}
 	hasher := sha256.New()
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
 		Client:     ESClient,
@@ -97,18 +101,25 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 		return "", fmt.Errorf("Error creating the indexer: %s", err)
 	}
 	start := time.Now().UTC()
+	docHash := make(map[string]bool)
+	redundantSkipped := 0
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
 			return "", fmt.Errorf("Cannot encode document %s: %s", document, err)
 		}
 		hasher.Write(j)
+		docId := hex.EncodeToString(hasher.Sum(nil))
+		if _, exists := docHash[docId]; exists {
+			redundantSkipped += 1
+			continue
+		}
 		err = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "index",
 				Body:       bytes.NewReader(j),
-				DocumentID: hex.EncodeToString(hasher.Sum(nil)),
+				DocumentID: docId,
 				OnSuccess: func(c context.Context, bii esutil.BulkIndexerItem, biri esutil.BulkIndexerResponseItem) {
 					indexerStatsLock.Lock()
 					defer indexerStatsLock.Unlock()
@@ -119,6 +130,7 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 		if err != nil {
 			return "", fmt.Errorf("Unexpected ES indexing error: %s", err)
 		}
+		docHash[docId] = true
 		hasher.Reset()
 	}
 	if err := bi.Close(context.Background()); err != nil {
@@ -127,6 +139,9 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	dur := time.Since(start)
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
+	}
+	if(redundantSkipped > 0){
+		statString += fmt.Sprintf(" redundantskipped=%d", redundantSkipped)
 	}
 	return fmt.Sprintf("Indexing finished in %v:%v", dur.Truncate(time.Millisecond), statString), nil
 }
