@@ -225,17 +225,19 @@ func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
 		return err
 	}
 	clusterMetadata.TotalNodes = len(nodes.Items)
-	// When the master label is found, the node is considered a master, regarldess of other labels the node could have
-	// similar logic happens with the infra nodes
+	// When the master label is found, the node is considered a master, regardless of other labels the node could have
 	for _, node := range nodes.Items {
 		if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok { // Check for master role
 			clusterMetadata.MasterNodesCount++
 			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
 			if _, ok := node.Labels["node-role.kubernetes.io/worker"]; ok {
-				if len(node.Spec.Taints) == 0 { // When mastersSchedulable is true, master nodes have at least one taint
+				if len(node.Spec.Taints) == 0 { // When mastersSchedulable is false, master nodes have at least one taint
 					clusterMetadata.WorkerNodesCount++
 				}
 			}
+		} else if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok { // Check for control-plane role
+			clusterMetadata.MasterNodesCount++
+			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
 		} else if _, ok := node.Labels["node-role.kubernetes.io/infra"]; ok { // Check for infra role
 			clusterMetadata.InfraNodesCount++
 			clusterMetadata.InfraNodesType = node.Labels["node.kubernetes.io/instance-type"]
