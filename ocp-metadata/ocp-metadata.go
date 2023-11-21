@@ -96,12 +96,17 @@ func (meta *Metadata) GetCurrentPodCount() (int, error) {
 	if err != nil {
 		return podCount, err
 	}
-	for _, node := range nodeList.Items {
-		podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running,spec.nodeName=" + node.Name})
-		if err != nil {
-			return podCount, err
+	podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	if err != nil {
+		return podCount, err
+	}
+	for _, pod := range podList.Items {
+		for _, node := range nodeList.Items {
+			if pod.Spec.NodeName == node.Name {
+				podCount++
+				break
+			}
 		}
-		podCount += len(podList.Items)
 	}
 	return podCount, nil
 }
