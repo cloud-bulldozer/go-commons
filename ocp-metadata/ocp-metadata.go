@@ -79,6 +79,19 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	return metadata, err
 }
 
+func (meta *Metadata) GetK8SMetadata() (ClusterMetadata, error) {
+	metadata := ClusterMetadata{}
+	version, err := meta.clientSet.ServerVersion()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.K8SVersion = version.GitVersion
+	if meta.getNodesInfo(&metadata) != nil {
+		return metadata, err
+	}
+	return metadata, err
+}
+
 // GetPrometheus Returns Prometheus URL and a valid Bearer token
 func (meta *Metadata) GetPrometheus() (string, string, error) {
 	prometheusURL, err := getPrometheusURL(meta.dynamicClient)
