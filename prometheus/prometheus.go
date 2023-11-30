@@ -31,7 +31,11 @@ func (bat authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if bat.username != "" {
 		req.SetBasicAuth(bat.username, bat.password)
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bat.token))
+
+	if bat.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bat.token))
+	}
+
 	return bat.Transport.RoundTrip(req)
 }
 
