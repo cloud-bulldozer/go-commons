@@ -1,6 +1,7 @@
 package prometheus
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
@@ -29,6 +30,56 @@ var _ = Describe("Tests for Prometheus", func() {
 				return
 			}
 			_, err = bat.RoundTrip(req)
+			//Asserting no of times mocks are called
+			Expect(count).To(BeEquivalentTo(0))
+			Expect(err).To(BeNil())
+		})
+
+		It("Test2 bearer header is used when token is provided", func() {
+			url := "https://example.com/api"
+			req, err := http.NewRequest(http.MethodGet, url, nil)
+			if err != nil {
+				fmt.Println("Failed to create request:", err)
+				return
+			}
+			_, err = bat.RoundTrip(req)
+			Expect(req.Header.Get("Authorization")).To(Equal("Bearer someRandomToken"))
+			//Asserting no of times mocks are called
+			Expect(count).To(BeEquivalentTo(0))
+			Expect(err).To(BeNil())
+		})
+
+		It("Test3 basic auth header is used when no token is provided", func() {
+			bat.token = ""
+			url := "https://example.com/api"
+			req, err := http.NewRequest(http.MethodGet, url, nil)
+			if err != nil {
+				fmt.Println("Failed to create request:", err)
+				return
+			}
+			_, err = bat.RoundTrip(req)
+
+			encodedAuthHeader := base64.StdEncoding.EncodeToString([]byte("someRandomUsername:someRandomPassword"))
+
+			Expect(req.Header.Get("Authorization")).To(Equal("Basic " + encodedAuthHeader))
+			//Asserting no of times mocks are called
+			Expect(count).To(BeEquivalentTo(0))
+			Expect(err).To(BeNil())
+		})
+
+		It("Test4 no auth header set when auth details are omitted", func() {
+			bat.token = ""
+			bat.username = ""
+			bat.password = ""
+			url := "https://example.com/api"
+			req, err := http.NewRequest(http.MethodGet, url, nil)
+			if err != nil {
+				fmt.Println("Failed to create request:", err)
+				return
+			}
+			_, err = bat.RoundTrip(req)
+
+			Expect(req.Header.Get("Authorization")).To(Equal(""))
 			//Asserting no of times mocks are called
 			Expect(count).To(BeEquivalentTo(0))
 			Expect(err).To(BeNil())
