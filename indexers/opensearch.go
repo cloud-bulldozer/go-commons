@@ -85,6 +85,10 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	var statString string
 	var indexerStatsLock sync.Mutex
 	indexerStats := make(map[string]int)
+
+	if len(documents) <= 0 {
+		return fmt.Sprintf("Indexing skipped due to %v docs", len(documents)), nil
+	}
 	hasher := sha256.New()
 	bi, err := opensearchutil.NewBulkIndexer(opensearchutil.BulkIndexerConfig{
 		Client:     OSClient,
@@ -97,18 +101,25 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 		return "", fmt.Errorf("Error creating the indexer: %s", err)
 	}
 	start := time.Now().UTC()
+	docHash := make(map[string]bool)
+	redundantSkipped := 0
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
 			return "", fmt.Errorf("Cannot encode document %s: %s", document, err)
 		}
 		hasher.Write(j)
+		docId := hex.EncodeToString(hasher.Sum(nil))
+		if _, exists := docHash[docId]; exists {
+			redundantSkipped += 1
+			continue
+		}
 		err = bi.Add(
 			context.Background(),
 			opensearchutil.BulkIndexerItem{
 				Action:     "index",
 				Body:       bytes.NewReader(j),
-				DocumentID: hex.EncodeToString(hasher.Sum(nil)),
+				DocumentID: docId,
 				OnSuccess: func(c context.Context, bii opensearchutil.BulkIndexerItem, biri opensearchutil.BulkIndexerResponseItem) {
 					indexerStatsLock.Lock()
 					defer indexerStatsLock.Unlock()
@@ -119,6 +130,7 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 		if err != nil {
 			return "", fmt.Errorf("Unexpected OpenSearch indexing error: %s", err)
 		}
+		docHash[docId] = true
 		hasher.Reset()
 	}
 	if err := bi.Close(context.Background()); err != nil {
@@ -127,6 +139,9 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	dur := time.Since(start)
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
+	}
+	if(redundantSkipped > 0){
+		statString += fmt.Sprintf(" redundantskipped=%d", redundantSkipped)
 	}
 	return fmt.Sprintf("Indexing finished in %v:%v", dur.Truncate(time.Millisecond), statString), nil
 }

@@ -105,6 +105,18 @@ var _ = Describe("Tests for elastic.go", func() {
 			Expect(err).To(BeNil())
 		})
 
+		It("Test empty list of docs", func() {
+			_, err := indexer.Index([]interface{}{}, testcase.opts)
+			Expect(err).To(BeNil())
+		})
+
+		It("Redundant list of docs", func() {
+			lastDoc := testcase.documents[len(testcase.documents)-1]
+			testcase.documents = append(testcase.documents, lastDoc)
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(BeNil())
+		})
+	
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
