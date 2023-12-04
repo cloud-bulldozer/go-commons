@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"gopkg.in/yaml.v3"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -74,6 +75,22 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	}
 	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
 	if meta.getNodesInfo(&metadata) != nil {
+		return metadata, err
+	}
+	metadata.Fips, err = meta.getFips()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.Publish, err = meta.getPublish()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.WorkerArch, err = meta.getComputeWorkerArch()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.ControlPlaneArch, err = meta.getControlPlaneArch()
+	if err != nil {
 		return metadata, err
 	}
 	return metadata, err
@@ -256,4 +273,81 @@ func (meta *Metadata) getSDNInfo() (string, error) {
 		return "", fmt.Errorf("networkType field not found in config.openshift.io/v1/network/networks/cluster status")
 	}
 	return networkType, err
+}
+
+func (meta *Metadata) getPublish() (string, error) {
+	installConfig, err := meta.getClusterConfig()
+	if err != nil {
+		return "", err
+	}
+	if val, ok := installConfig["publish"]; ok {
+		return val.(string), nil
+	}
+	return "", nil
+}
+
+func (meta *Metadata) getFips() (bool, error) {
+	installConfig, err := meta.getClusterConfig()
+	if err != nil {
+		return false, err
+	}
+	if val, ok := installConfig["fips"]; ok {
+		return val.(bool), nil
+	}
+	return false, nil
+}
+
+func (meta *Metadata) getComputeWorkerArch() (string, error) {
+	installConfig, err := meta.getClusterConfig()
+	if err != nil {
+		return "", err
+	}
+	if val, ok := installConfig["compute"]; ok {
+		for _, val := range val.([]interface{}) {
+			comConfig := val.(map[string]interface{})
+			if v, ok := comConfig["name"].(string); ok {
+				if v == "worker" {
+					return comConfig["architecture"].(string), nil
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
+func (meta *Metadata) getControlPlaneArch() (string, error) {
+	installConfig, err := meta.getClusterConfig()
+	if err != nil {
+		return "", err
+	}
+	if val, ok := installConfig["controlPlane"]; ok {
+		cpConfig := val.(map[string]interface{})
+		if v, ok := cpConfig["architecture"].(string); ok {
+			return v, nil
+		}
+	}
+	return "", nil
+}
+
+// getClusterConfig returns cluster configuration yaml
+func (meta *Metadata) getClusterConfig() (map[string]interface{}, error) {
+	config, err := meta.clientSet.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "cluster-config-v1", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	installConfigRaw := config.Data["install-config"]
+	installConfig, err := toMap(installConfigRaw)
+	if err != nil {
+		return nil, err
+	}
+	return installConfig, nil
+}
+
+func toMap(str string) (map[string]interface{}, error) {
+	config := map[string]interface{}{}
+	err := yaml.Unmarshal([]byte(str), &config)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
 }

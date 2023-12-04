@@ -87,4 +87,8 @@ type ClusterMetadata struct {
 	SDNType          string `json:"sdnType"`
 	ClusterName      string `json:"clusterName"`
 	Region           string `json:"region"`
+	Fips             bool   `json:"fips"`
+	Publish          string `json:"publish"`
+	WorkerArch       string `json:"wrkerArch"`
+	ControlPlaneArch string `json:"controlPlaneArch"`
 }
