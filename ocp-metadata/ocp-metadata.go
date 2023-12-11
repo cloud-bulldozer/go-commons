@@ -21,6 +21,7 @@ import (
 	"regexp"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -57,16 +58,18 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	if err != nil {
 		return metadata, nil
 	}
-	metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
-	metadata.ClusterType = "self-managed"
-	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
-		if v.Key == "red-hat-clustertype" {
-			metadata.ClusterType = v.Value
+	if infra != nil {
+		metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
+		metadata.ClusterType = "self-managed"
+		for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
+			if v.Key == "red-hat-clustertype" {
+				metadata.ClusterType = v.Value
+			}
 		}
-	}
-	metadata.SDNType, err = meta.getSDNInfo()
-	if err != nil {
-		return metadata, err
+		metadata.SDNType, err = meta.getSDNInfo()
+		if err != nil {
+			return metadata, err
+		}
 	}
 	version, err := meta.getVersionInfo()
 	if err != nil {
@@ -159,8 +162,8 @@ func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
 	return response.Status.Token, err
 }
 
-// getInfraDetails returns cluster name and platform
-func (meta *Metadata) getInfraDetails() (infraObj, error) {
+// getInfraDetails returns a pointer to an infrastructure object or nil
+func (meta *Metadata) getInfraDetails() (*infraObj, error) {
 	var infraJSON infraObj
 	infra, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
 		Group:    "config.openshift.io",
@@ -168,11 +171,15 @@ func (meta *Metadata) getInfraDetails() (infraObj, error) {
 		Resource: "infrastructures",
 	}).Get(context.TODO(), "cluster", metav1.GetOptions{})
 	if err != nil {
-		return infraJSON, err
+		// If the infrastructure resource is not found we assume this is not an OCP cluster
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
+		return &infraJSON, err
 	}
 	infraData, _ := infra.MarshalJSON()
 	err = json.Unmarshal(infraData, &infraJSON)
-	return infraJSON, err
+	return &infraJSON, err
 }
 
 // getVersionInfo obtains OCP and k8s version information
@@ -191,6 +198,10 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 			Resource: "clusterversions",
 		}).Get(context.TODO(), "version", metav1.GetOptions{})
 	if err != nil {
+		// If the clusterversion resource is not found we assume this is not an OCP cluster
+		if errors.IsNotFound(err) {
+			return versionInfo, nil
+		}
 		return versionInfo, err
 	}
 	clusterVersionBytes, _ := clusterVersion.MarshalJSON()
@@ -217,17 +228,19 @@ func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
 		return err
 	}
 	clusterMetadata.TotalNodes = len(nodes.Items)
-	// When the master label is found, the node is considered a master, regarldess of other labels the node could have
-	// similar logic happens with the infra nodes
+	// When the master label is found, the node is considered a master, regardless of other labels the node could have
 	for _, node := range nodes.Items {
 		if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok { // Check for master role
 			clusterMetadata.MasterNodesCount++
 			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
 			if _, ok := node.Labels["node-role.kubernetes.io/worker"]; ok {
-				if len(node.Spec.Taints) == 0 { // When mastersSchedulable is true, master nodes have at least one taint
+				if len(node.Spec.Taints) == 0 { // When mastersSchedulable is false, master nodes have at least one taint
 					clusterMetadata.WorkerNodesCount++
 				}
 			}
+		} else if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok { // Check for control-plane role
+			clusterMetadata.MasterNodesCount++
+			clusterMetadata.MasterNodesType = node.Labels["node.kubernetes.io/instance-type"]
 		} else if _, ok := node.Labels["node-role.kubernetes.io/infra"]; ok { // Check for infra role
 			clusterMetadata.InfraNodesCount++
 			clusterMetadata.InfraNodesType = node.Labels["node.kubernetes.io/instance-type"]

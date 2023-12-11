@@ -71,20 +71,20 @@ type clusterVersion struct {
 // Type to store cluster metadata
 type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
-	Platform         string `json:"platform"`
-	ClusterType      string `json:"clusterType"`
-	OCPVersion       string `json:"ocpVersion"`
-	OCPMajorVersion  string `json:"ocpMajorVersion"`
-	K8SVersion       string `json:"k8sVersion"`
-	MasterNodesType  string `json:"masterNodesType"`
-	WorkerNodesType  string `json:"workerNodesType"`
-	MasterNodesCount int    `json:"masterNodesCount"`
-	InfraNodesType   string `json:"infraNodesType"`
-	WorkerNodesCount int    `json:"workerNodesCount"`
-	InfraNodesCount  int    `json:"infraNodesCount"`
-	OtherNodesCount  int    `json:"otherNodesCount"`
-	TotalNodes       int    `json:"totalNodes"`
-	SDNType          string `json:"sdnType"`
-	ClusterName      string `json:"clusterName"`
-	Region           string `json:"region"`
+	Platform         string `json:"platform,omitempty"`
+	ClusterType      string `json:"clusterType,omitempty"`
+	OCPVersion       string `json:"ocpVersion,omitempty"`
+	OCPMajorVersion  string `json:"ocpMajorVersion,omitempty"`
+	K8SVersion       string `json:"k8sVersion,omitempty"`
+	MasterNodesType  string `json:"masterNodesType,omitempty"`
+	WorkerNodesType  string `json:"workerNodesType,omitempty"`
+	MasterNodesCount int    `json:"masterNodesCount,omitempty"`
+	InfraNodesType   string `json:"infraNodesType,omitempty"`
+	WorkerNodesCount int    `json:"workerNodesCount,omitempty"`
+	InfraNodesCount  int    `json:"infraNodesCount,omitempty"`
+	OtherNodesCount  int    `json:"otherNodesCount,omitempty"`
+	TotalNodes       int    `json:"totalNodes,omitempty"`
+	SDNType          string `json:"sdnType,omitempty"`
+	ClusterName      string `json:"clusterName,omitempty"`
+	Region           string `json:"region,omitempty"`
 }
