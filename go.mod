@@ -7,6 +7,7 @@ require (
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.44.0
+	github.com/sirupsen/logrus v1.9.3
 	k8s.io/api v0.27.1
 	k8s.io/apimachinery v0.27.1
 	k8s.io/client-go v0.27.1
@@ -16,7 +17,9 @@ require (
 require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
+	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
