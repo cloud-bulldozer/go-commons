@@ -88,9 +88,6 @@ func (p *Prometheus) QueryRange(query string, start, end time.Time, step time.Du
 
 // Verifies prometheus connection
 func (p *Prometheus) verifyConnection() error {
-	_, err := p.api.Runtimeinfo(context.TODO())
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := p.Query("up{}", time.Now().UTC().UTC())
+	return err
 }

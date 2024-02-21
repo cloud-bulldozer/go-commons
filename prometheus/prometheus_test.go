@@ -101,7 +101,7 @@ var _ = Describe("Tests for Prometheus", func() {
 			_, err := NewClient(url, token, username, password, tlsSkipVerify)
 			//Asserting no of times mocks are called
 			Expect(count).To(BeEquivalentTo(0))
-			Expect(err.Error()).To(ContainSubstring("Get \"/api/v1/status/runtimeinfo\": unsupported protocol scheme \"\""))
+			Expect(err.Error()).To(ContainSubstring("Post \"/api/v1/query\": unsupported protocol scheme \"\""))
 		})
 
 		It("Test2 passing not valid url", func() {
