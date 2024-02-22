@@ -32,9 +32,12 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+var restConfig *rest.Config
+
 // Metadata object
 type Metadata struct {
 	clientSet     *kubernetes.Clientset
+	restConfig    *rest.Config
 	dynamicClient dynamic.Interface
 }
 
@@ -48,6 +51,7 @@ func NewMetadata(restConfig *rest.Config) (Metadata, error) {
 	return Metadata{
 		clientSet:     cs,
 		dynamicClient: dc,
+		restConfig:    restConfig,
 	}, err
 }
 
@@ -90,6 +94,10 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 		return metadata, err
 	}
 	metadata.ControlPlaneArch, err = meta.getControlPlaneArch()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
 	if err != nil {
 		return metadata, err
 	}
@@ -327,6 +335,36 @@ func (meta *Metadata) getControlPlaneArch() (string, error) {
 		}
 	}
 	return "", nil
+}
+
+// getIPSec returns if the cluster has IPSec enabled
+func (meta *Metadata) getIPSec() (bool, string, error) {
+	ipsecType := "Disabled"
+	networks, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "operator.openshift.io",
+		Version:  "v1",
+		Resource: "networks",
+	}).Get(context.TODO(), "cluster", metav1.GetOptions{})
+	if err != nil {
+		return false, ipsecType, err
+	}
+	ipsecMode, found, err := unstructured.NestedString(networks.UnstructuredContent(), "spec", "defaultNetwork", "ovnKubernetesConfig", "ipsecConfig", "mode")
+	if !found {
+		_, found, _ := unstructured.NestedMap(networks.UnstructuredContent(), "spec", "defaultNetwork", "ovnKubernetesConfig", "ipsecConfig")
+		if !found {
+			return false, ipsecType, nil
+		} else {
+			ipsecType = "Full"
+			return true, ipsecType, nil
+		}
+	}
+	if err != nil {
+		return false, ipsecType, fmt.Errorf(err.Error())
+	}
+	if ipsecMode != "Disabled" {
+		return true, ipsecMode, nil
+	}
+	return false, ipsecMode, nil
 }
 
 // getClusterConfig returns cluster configuration yaml
