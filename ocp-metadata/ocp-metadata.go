@@ -33,8 +33,6 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-var restConfig *rest.Config
-
 // Metadata object
 type Metadata struct {
 	clientSet     *kubernetes.Clientset
