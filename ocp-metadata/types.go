@@ -89,6 +89,8 @@ type ClusterMetadata struct {
 	Region           string `json:"region,omitempty"`
 	Fips             bool   `json:"fips"`
 	Publish          string `json:"publish"`
-	WorkerArch       string `json:"wrkerArch"`
+	WorkerArch       string `json:"workerArch"`
 	ControlPlaneArch string `json:"controlPlaneArch"`
+	Ipsec            bool   `json:"ipsec"`
+	IpsecMode        string `json:"ipsecMode"`
 }
