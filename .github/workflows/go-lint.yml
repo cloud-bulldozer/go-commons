@@ -24,5 +24,6 @@ jobs:
     - name: Go Tidy
       run: |
         trap 'echo "::error file=go.mod,title=Go Tidy Check::Commit would leave go.mod untidy"' ERR
+        go clean -cache -modcache
         go mod tidy
         git diff --exit-code
