@@ -61,6 +61,14 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	if err != nil {
 		return metadata, nil
 	}
+	version, err := meta.getVersionInfo()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
+	if meta.getNodesInfo(&metadata) != nil {
+		return metadata, err
+	}
 	if infra != nil {
 		metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
 		metadata.ClusterType = "self-managed"
@@ -73,34 +81,33 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 		if err != nil {
 			return metadata, err
 		}
-	}
-	version, err := meta.getVersionInfo()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
-	if meta.getNodesInfo(&metadata) != nil {
-		return metadata, err
-	}
-	metadata.Fips, err = meta.getFips()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.Publish, err = meta.getPublish()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.WorkerArch, err = meta.getComputeWorkerArch()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.ControlPlaneArch, err = meta.getControlPlaneArch()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
-	if err != nil {
-		return metadata, err
+
+		// Get InstallConfig to use in multiple methods
+		installConfig, err := meta.getClusterConfig()
+		if err != nil {
+			return metadata, err
+		}
+
+		metadata.Fips, err = meta.getFips(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.Publish, err = meta.getPublish(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.WorkerArch, err = meta.getComputeWorkerArch(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.ControlPlaneArch, err = meta.getControlPlaneArch(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
+		if err != nil {
+			return metadata, err
+		}
 	}
 	return metadata, err
 }
@@ -294,33 +301,21 @@ func (meta *Metadata) getSDNInfo() (string, error) {
 	return networkType, err
 }
 
-func (meta *Metadata) getPublish() (string, error) {
-	installConfig, err := meta.getClusterConfig()
-	if err != nil {
-		return "", err
-	}
+func (meta *Metadata) getPublish(installConfig map[string]interface{}) (string, error) {
 	if val, ok := installConfig["publish"]; ok {
 		return val.(string), nil
 	}
 	return "", nil
 }
 
-func (meta *Metadata) getFips() (bool, error) {
-	installConfig, err := meta.getClusterConfig()
-	if err != nil {
-		return false, err
-	}
+func (meta *Metadata) getFips(installConfig map[string]interface{}) (bool, error) {
 	if val, ok := installConfig["fips"]; ok {
 		return val.(bool), nil
 	}
 	return false, nil
 }
 
-func (meta *Metadata) getComputeWorkerArch() (string, error) {
-	installConfig, err := meta.getClusterConfig()
-	if err != nil {
-		return "", err
-	}
+func (meta *Metadata) getComputeWorkerArch(installConfig map[string]interface{}) (string, error) {
 	if val, ok := installConfig["compute"]; ok {
 		for _, val := range val.([]interface{}) {
 			comConfig := val.(map[string]interface{})
@@ -334,11 +329,7 @@ func (meta *Metadata) getComputeWorkerArch() (string, error) {
 	return "", nil
 }
 
-func (meta *Metadata) getControlPlaneArch() (string, error) {
-	installConfig, err := meta.getClusterConfig()
-	if err != nil {
-		return "", err
-	}
+func (meta *Metadata) getControlPlaneArch(installConfig map[string]interface{}) (string, error) {
 	if val, ok := installConfig["controlPlane"]; ok {
 		cpConfig := val.(map[string]interface{})
 		if v, ok := cpConfig["architecture"].(string); ok {
