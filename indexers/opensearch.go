@@ -32,8 +32,6 @@ import (
 	opensearchutil "github.com/opensearch-project/opensearch-go/opensearchutil"
 )
 
-const indexer = "opensearch"
-
 // OSClient OpenSearch client instance
 var OSClient *opensearch.Client
 
@@ -44,7 +42,7 @@ type OpenSearch struct {
 
 // Init function
 func init() {
-	indexerMap[indexer] = &OpenSearch{}
+	indexerMap[OpenSearchIndexer] = &OpenSearch{}
 }
 
 // Returns new indexer for OpenSearch
@@ -140,7 +138,7 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
 	}
-	if(redundantSkipped > 0){
+	if redundantSkipped > 0 {
 		statString += fmt.Sprintf(" redundantskipped=%d", redundantSkipped)
 	}
 	return fmt.Sprintf("Indexing finished in %v:%v", dur.Truncate(time.Millisecond), statString), nil

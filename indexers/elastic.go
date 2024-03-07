@@ -32,8 +32,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 )
 
-const elastic = "elastic"
-
 // Elastic ElasticSearch instance
 type Elastic struct {
 	index string
@@ -44,7 +42,7 @@ var ESClient *elasticsearch.Client
 
 // Init function
 func init() {
-	indexerMap[elastic] = &Elastic{}
+	indexerMap[ElasticIndexer] = &Elastic{}
 }
 
 // Returns new indexer for elastic search
@@ -140,7 +138,7 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	for stat, val := range indexerStats {
 		statString += fmt.Sprintf(" %s=%d", stat, val)
 	}
-	if(redundantSkipped > 0){
+	if redundantSkipped > 0 {
 		statString += fmt.Sprintf(" redundantskipped=%d", redundantSkipped)
 	}
 	return fmt.Sprintf("Indexing finished in %v:%v", dur.Truncate(time.Millisecond), statString), nil

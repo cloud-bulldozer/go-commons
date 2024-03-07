@@ -2,8 +2,10 @@ package indexers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"path"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,9 +21,8 @@ var _ = Describe("Tests for local.go", func() {
 		var localIndexer Local
 		BeforeEach(func() {
 			testcase = newtestcase{
-				indexerconfig: IndexerConfig{Type: "elastic",
+				indexerconfig: IndexerConfig{Type: "local",
 					Servers:            []string{""},
-					Index:              "go-commons-test",
 					InsecureSkipVerify: true,
 					MetricsDirectory:   "",
 				},
@@ -41,7 +42,7 @@ var _ = Describe("Tests for local.go", func() {
 	})
 
 	Context("Default behaviour of local.go, Index()", func() {
-		var testcase indexMethodTestcase
+		var testcase, emtpyTestCase indexMethodTestcase
 		var indexer Local
 		indexer.metricsDirectory = "placeholder"
 		BeforeEach(func() {
@@ -71,6 +72,12 @@ var _ = Describe("Tests for local.go", func() {
 					MetricName: "placeholder",
 				},
 			}
+			emtpyTestCase = indexMethodTestcase{
+				documents: []interface{}{},
+				opts: IndexingOpts{
+					MetricName: "empty",
+				},
+			}
 		})
 		AfterEach(func() {
 			err := os.RemoveAll(indexer.metricsDirectory)
@@ -79,13 +86,10 @@ var _ = Describe("Tests for local.go", func() {
 			}
 		})
 
-		It("No err is returned", func() {
+		It("Metric file is created", func() {
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
-		})
-
-		It("No err is returned", func() {
-			_, err := indexer.Index(testcase.documents, testcase.opts)
+			_, err = os.Stat(path.Join(indexer.metricsDirectory, testcase.opts.MetricName+".json"))
 			Expect(err).To(BeNil())
 		})
 
@@ -99,6 +103,10 @@ var _ = Describe("Tests for local.go", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeEquivalentTo(errors.New("JSON encoding error: json: unsupported type: chan string")))
+		})
+		It("returns err no empty document list", func() {
+			_, err := indexer.Index(emtpyTestCase.documents, emtpyTestCase.opts)
+			Expect(err).To(BeEquivalentTo(fmt.Errorf("Empty document list in %v", emtpyTestCase.opts.MetricName)))
 		})
 	})
 })
