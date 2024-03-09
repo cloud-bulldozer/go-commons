@@ -21,8 +21,6 @@ import (
 	"path"
 )
 
-const local = "local"
-
 // Local indexer instance
 type Local struct {
 	metricsDirectory string
@@ -30,7 +28,7 @@ type Local struct {
 
 // Init function
 func init() {
-	indexerMap[local] = &Local{}
+	indexerMap[LocalIndexer] = &Local{}
 }
 
 // Prepares local indexing directory
@@ -45,6 +43,9 @@ func (l *Local) new(indexerConfig IndexerConfig) error {
 
 // Index uses generates a local file with the given name and metrics
 func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error) {
+	if len(documents) == 0 {
+		return "", fmt.Errorf("Empty document list in %v", opts.MetricName)
+	}
 	if opts.MetricName == "" {
 		return "", fmt.Errorf("MetricName shouldn't be empty")
 	}
