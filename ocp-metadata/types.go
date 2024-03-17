@@ -87,4 +87,10 @@ type ClusterMetadata struct {
 	SDNType          string `json:"sdnType,omitempty"`
 	ClusterName      string `json:"clusterName,omitempty"`
 	Region           string `json:"region,omitempty"`
+	Fips             bool   `json:"fips,omitempty"`
+	Publish          string `json:"publish,omitempty"`
+	WorkerArch       string `json:"workerArch,omitempty"`
+	ControlPlaneArch string `json:"controlPlaneArch,omitempty"`
+	Ipsec            bool   `json:"ipsec,omitempty"`
+	IpsecMode        string `json:"ipsecMode,omitempty"`
 }

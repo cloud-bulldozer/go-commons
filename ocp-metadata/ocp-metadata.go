@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"gopkg.in/yaml.v3"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +36,7 @@ import (
 // Metadata object
 type Metadata struct {
 	clientSet     *kubernetes.Clientset
+	restConfig    *rest.Config
 	dynamicClient dynamic.Interface
 }
 
@@ -48,6 +50,7 @@ func NewMetadata(restConfig *rest.Config) (Metadata, error) {
 	return Metadata{
 		clientSet:     cs,
 		dynamicClient: dc,
+		restConfig:    restConfig,
 	}, err
 }
 
@@ -57,6 +60,14 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	infra, err := meta.getInfraDetails()
 	if err != nil {
 		return metadata, nil
+	}
+	version, err := meta.getVersionInfo()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
+	if meta.getNodesInfo(&metadata) != nil {
+		return metadata, err
 	}
 	if infra != nil {
 		metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
@@ -70,14 +81,33 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 		if err != nil {
 			return metadata, err
 		}
-	}
-	version, err := meta.getVersionInfo()
-	if err != nil {
-		return metadata, err
-	}
-	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
-	if meta.getNodesInfo(&metadata) != nil {
-		return metadata, err
+
+		// Get InstallConfig to use in multiple methods
+		installConfig, err := meta.getClusterConfig()
+		if err != nil {
+			return metadata, err
+		}
+
+		metadata.Fips, err = meta.getFips(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.Publish, err = meta.getPublish(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.WorkerArch, err = meta.getComputeWorkerArch(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.ControlPlaneArch, err = meta.getControlPlaneArch(installConfig)
+		if err != nil {
+			return metadata, err
+		}
+		metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
+		if err != nil {
+			return metadata, err
+		}
 	}
 	return metadata, err
 }
@@ -269,4 +299,95 @@ func (meta *Metadata) getSDNInfo() (string, error) {
 		return "", fmt.Errorf("networkType field not found in config.openshift.io/v1/network/networks/cluster status")
 	}
 	return networkType, err
+}
+
+func (meta *Metadata) getPublish(installConfig map[string]interface{}) (string, error) {
+	if val, ok := installConfig["publish"]; ok {
+		return val.(string), nil
+	}
+	return "", nil
+}
+
+func (meta *Metadata) getFips(installConfig map[string]interface{}) (bool, error) {
+	if val, ok := installConfig["fips"]; ok {
+		return val.(bool), nil
+	}
+	return false, nil
+}
+
+func (meta *Metadata) getComputeWorkerArch(installConfig map[string]interface{}) (string, error) {
+	if val, ok := installConfig["compute"]; ok {
+		for _, val := range val.([]interface{}) {
+			comConfig := val.(map[string]interface{})
+			if v, ok := comConfig["name"].(string); ok {
+				if v == "worker" {
+					return comConfig["architecture"].(string), nil
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
+func (meta *Metadata) getControlPlaneArch(installConfig map[string]interface{}) (string, error) {
+	if val, ok := installConfig["controlPlane"]; ok {
+		cpConfig := val.(map[string]interface{})
+		if v, ok := cpConfig["architecture"].(string); ok {
+			return v, nil
+		}
+	}
+	return "", nil
+}
+
+// getIPSec returns if the cluster has IPSec enabled
+func (meta *Metadata) getIPSec() (bool, string, error) {
+	ipsecType := "Disabled"
+	networks, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "operator.openshift.io",
+		Version:  "v1",
+		Resource: "networks",
+	}).Get(context.TODO(), "cluster", metav1.GetOptions{})
+	if err != nil {
+		return false, ipsecType, err
+	}
+	ipsecMode, found, err := unstructured.NestedString(networks.UnstructuredContent(), "spec", "defaultNetwork", "ovnKubernetesConfig", "ipsecConfig", "mode")
+	if !found {
+		_, found, _ := unstructured.NestedMap(networks.UnstructuredContent(), "spec", "defaultNetwork", "ovnKubernetesConfig", "ipsecConfig")
+		if !found {
+			return false, ipsecType, nil
+		} else {
+			ipsecType = "Full"
+			return true, ipsecType, nil
+		}
+	}
+	if err != nil {
+		return false, ipsecType, fmt.Errorf(err.Error())
+	}
+	if ipsecMode != "Disabled" {
+		return true, ipsecMode, nil
+	}
+	return false, ipsecMode, nil
+}
+
+// getClusterConfig returns cluster configuration yaml
+func (meta *Metadata) getClusterConfig() (map[string]interface{}, error) {
+	config, err := meta.clientSet.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "cluster-config-v1", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	installConfigRaw := config.Data["install-config"]
+	installConfig, err := toMap(installConfigRaw)
+	if err != nil {
+		return nil, err
+	}
+	return installConfig, nil
+}
+
+func toMap(str string) (map[string]interface{}, error) {
+	config := map[string]interface{}{}
+	err := yaml.Unmarshal([]byte(str), &config)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
 }
