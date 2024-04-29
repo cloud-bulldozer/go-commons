@@ -18,7 +18,6 @@ var _ = Describe("Tests for local.go", func() {
 			indexerconfig IndexerConfig
 		}
 		var testcase newtestcase
-		var localIndexer Local
 		BeforeEach(func() {
 			testcase = newtestcase{
 				indexerconfig: IndexerConfig{Type: "local",
@@ -30,13 +29,13 @@ var _ = Describe("Tests for local.go", func() {
 		})
 
 		It("returns err no metrics directory", func() {
-			err := localIndexer.new(testcase.indexerconfig)
+			_, err := NewLocalIndexer(testcase.indexerconfig)
 			Expect(err).To(BeEquivalentTo(errors.New("directory name not specified")))
 		})
 
 		It("returns nil as error", func() {
 			testcase.indexerconfig.MetricsDirectory = "placeholder"
-			err := localIndexer.new(testcase.indexerconfig)
+			_, err := NewLocalIndexer(testcase.indexerconfig)
 			Expect(err).To(BeNil())
 		})
 	})

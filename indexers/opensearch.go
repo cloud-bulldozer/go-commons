@@ -40,16 +40,12 @@ type OpenSearch struct {
 	index string
 }
 
-// Init function
-func init() {
-	indexerMap[OpenSearchIndexer] = &OpenSearch{}
-}
-
 // Returns new indexer for OpenSearch
-func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
+func NewOpenSearchIndexer(indexerConfig IndexerConfig) (*OpenSearch, error) {
 	var err error
+	var osIndexer OpenSearch
 	if indexerConfig.Index == "" {
-		return fmt.Errorf("index name not specified")
+		return &osIndexer, fmt.Errorf("index name not specified")
 	}
 	OpenSearchIndex := strings.ToLower(indexerConfig.Index)
 	cfg := opensearch.Config{
@@ -58,24 +54,24 @@ func (OpenSearchIndexer *OpenSearch) new(indexerConfig IndexerConfig) error {
 	}
 	OSClient, err = opensearch.NewClient(cfg)
 	if err != nil {
-		return fmt.Errorf("error creating the OpenSearch client: %s", err)
+		return &osIndexer, fmt.Errorf("error creating the OpenSearch client: %s", err)
 	}
 	r, err := OSClient.Cluster.Health()
 	if err != nil {
-		return fmt.Errorf("OpenSearch health check failed: %s", err)
+		return &osIndexer, fmt.Errorf("OpenSearch health check failed: %s", err)
 	}
 	if r.StatusCode != 200 {
-		return fmt.Errorf("unexpected OpenSearch status code: %d", r.StatusCode)
+		return &osIndexer, fmt.Errorf("unexpected OpenSearch status code: %d", r.StatusCode)
 	}
-	OpenSearchIndexer.index = OpenSearchIndex
+	osIndexer.index = OpenSearchIndex
 	r, _ = OSClient.Indices.Exists([]string{OpenSearchIndex})
 	if r.IsError() {
 		r, _ = OSClient.Indices.Create(OpenSearchIndex)
 		if r.IsError() {
-			return fmt.Errorf("error creating index %s on OpenSearch: %s", OpenSearchIndex, r.String())
+			return &osIndexer, fmt.Errorf("error creating index %s on OpenSearch: %s", OpenSearchIndex, r.String())
 		}
 	}
-	return nil
+	return &osIndexer, nil
 }
 
 // Index uses bulkIndexer to index the documents in the given index

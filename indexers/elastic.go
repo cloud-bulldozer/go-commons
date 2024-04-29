@@ -40,16 +40,12 @@ type Elastic struct {
 // ESClient elasticsearch client instance
 var ESClient *elasticsearch.Client
 
-// Init function
-func init() {
-	indexerMap[ElasticIndexer] = &Elastic{}
-}
-
-// Returns new indexer for elastic search
-func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
+// Returns new indexer for Elastic
+func NewElasticIndexer(indexerConfig IndexerConfig) (*Elastic, error) {
 	var err error
+	var esIndexer Elastic
 	if indexerConfig.Index == "" {
-		return fmt.Errorf("index name not specified")
+		return &esIndexer, fmt.Errorf("index name not specified")
 	}
 	esIndex := strings.ToLower(indexerConfig.Index)
 	cfg := elasticsearch.Config{
@@ -58,24 +54,24 @@ func (esIndexer *Elastic) new(indexerConfig IndexerConfig) error {
 	}
 	ESClient, err = elasticsearch.NewClient(cfg)
 	if err != nil {
-		return fmt.Errorf("error creating the ES client: %s", err)
+		return &esIndexer, fmt.Errorf("error creating the ES client: %s", err)
 	}
 	r, err := ESClient.Cluster.Health()
 	if err != nil {
-		return fmt.Errorf("ES health check failed: %s", err)
+		return &esIndexer, fmt.Errorf("ES health check failed: %s", err)
 	}
 	if r.StatusCode != 200 {
-		return fmt.Errorf("unexpected ES status code: %d", r.StatusCode)
+		return &esIndexer, fmt.Errorf("unexpected ES status code: %d", r.StatusCode)
 	}
 	esIndexer.index = esIndex
 	r, _ = ESClient.Indices.Exists([]string{esIndex})
 	if r.IsError() {
 		r, _ = ESClient.Indices.Create(esIndex)
 		if r.IsError() {
-			return fmt.Errorf("error creating index %s on ES: %s", esIndex, r.String())
+			return &esIndexer, fmt.Errorf("error creating index %s on ES: %s", esIndex, r.String())
 		}
 	}
-	return nil
+	return &esIndexer, nil
 }
 
 // Index uses bulkIndexer to index the documents in the given index

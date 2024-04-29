@@ -18,20 +18,19 @@ import (
 	"fmt"
 )
 
-var indexerMap = make(map[IndexerType]Indexer)
-
 // NewIndexer creates a new Indexer with the specified IndexerConfig
 func NewIndexer(indexerConfig IndexerConfig) (*Indexer, error) {
 	var indexer Indexer
-	var exists bool
-	cfg := indexerConfig
-	if indexer, exists = indexerMap[cfg.Type]; exists {
-		err := indexer.new(indexerConfig)
-		if err != nil {
-			return &indexer, err
-		}
-	} else {
-		return &indexer, fmt.Errorf("Indexer not found: %s", cfg.Type)
+	var err error
+	switch indexerConfig.Type {
+	case LocalIndexer:
+		indexer, err = NewLocalIndexer(indexerConfig)
+	case ElasticIndexer:
+		indexer, err = NewElasticIndexer(indexerConfig)
+	case OpenSearchIndexer:
+		indexer, err = NewOpenSearchIndexer(indexerConfig)
+	default:
+		return &indexer, fmt.Errorf("Indexer not found: %s", indexerConfig.Type)
 	}
-	return &indexer, nil
+	return &indexer, err
 }

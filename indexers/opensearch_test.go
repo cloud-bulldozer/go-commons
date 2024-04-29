@@ -2,10 +2,10 @@ package indexers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,12 +39,12 @@ var _ = Describe("Tests for opensearch.go", func() {
 			}))
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("OpenSearch health check failed: cannot retrieve information from OpenSearch")))
 		})
 
 		It("when no url is passed", func() {
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusGatewayTimeout)
 			}))
@@ -56,7 +56,7 @@ var _ = Describe("Tests for opensearch.go", func() {
 			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
 			defer os.Unsetenv("ELASTICSEARCH_URL")
 			defer testcase.mockServer.Close()
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("error creating the OpenSearch client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
 		})
 
@@ -64,7 +64,7 @@ var _ = Describe("Tests for opensearch.go", func() {
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Index = ""
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("index name not specified")))
 		})
 
