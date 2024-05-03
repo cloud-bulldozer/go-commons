@@ -26,19 +26,15 @@ type Local struct {
 	metricsDirectory string
 }
 
-// Init function
-func init() {
-	indexerMap[LocalIndexer] = &Local{}
-}
-
-// Prepares local indexing directory
-func (l *Local) new(indexerConfig IndexerConfig) error {
+// NewLocalIndexer returns a new Local Indexer
+func NewLocalIndexer(indexerConfig IndexerConfig) (*Local, error) {
+	var localIndexer Local
 	if indexerConfig.MetricsDirectory == "" {
-		return fmt.Errorf("directory name not specified")
+		return &localIndexer, fmt.Errorf("directory name not specified")
 	}
-	l.metricsDirectory = indexerConfig.MetricsDirectory
-	err := os.MkdirAll(l.metricsDirectory, 0744)
-	return err
+	localIndexer.metricsDirectory = indexerConfig.MetricsDirectory
+	err := os.MkdirAll(localIndexer.metricsDirectory, 0744)
+	return &localIndexer, err
 }
 
 // Index uses generates a local file with the given name and metrics

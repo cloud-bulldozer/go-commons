@@ -2,10 +2,10 @@ package indexers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -40,12 +40,12 @@ var _ = Describe("Tests for elastic.go", func() {
 			}))
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewElasticIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("unexpected ES status code: 400")))
 		})
 
 		It("when no url is passed", func() {
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewElasticIndexer(testcase.indexerConfig)
 			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusGatewayTimeout)
 			}))
@@ -58,7 +58,7 @@ var _ = Describe("Tests for elastic.go", func() {
 			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
 			defer os.Unsetenv("ELASTICSEARCH_URL")
 			defer testcase.mockServer.Close()
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewElasticIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("error creating the ES client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
 		})
 
@@ -66,7 +66,7 @@ var _ = Describe("Tests for elastic.go", func() {
 			defer testcase.mockServer.Close()
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			testcase.indexerConfig.Index = ""
-			err := indexer.new(testcase.indexerConfig)
+			_, err := NewElasticIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("index name not specified")))
 		})
 
@@ -116,7 +116,7 @@ var _ = Describe("Tests for elastic.go", func() {
 			_, err := indexer.Index(testcase.documents, testcase.opts)
 			Expect(err).To(BeNil())
 		})
-	
+
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
