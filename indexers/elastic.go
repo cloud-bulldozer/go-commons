@@ -30,6 +30,7 @@ import (
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	log "github.com/sirupsen/logrus"
 )
 
 // Elastic ElasticSearch instance
@@ -100,14 +101,17 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
-			return "", fmt.Errorf("Cannot encode document %s: %s", document, err)
+			return "", fmt.Errorf("Cannot encode document %v: %s", document, err)
 		}
+
 		hasher.Write(j)
 		docId := hex.EncodeToString(hasher.Sum(nil))
 		if _, exists := docHash[docId]; exists {
-			redundantSkipped += 1
+			log.Debugf("Skipping redundant document with ID: %s", docId)
+			redundantSkipped++
 			continue
 		}
+
 		err = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
@@ -119,11 +123,16 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 					defer indexerStatsLock.Unlock()
 					indexerStats[biri.Result]++
 				},
+				OnFailure: func(c context.Context, bii esutil.BulkIndexerItem, biri esutil.BulkIndexerResponseItem, err error) {
+					log.Infof("Failed to index document with ID %s: %s, error: %v", bii.DocumentID, biri.Error.Reason, err)
+				},
 			},
 		)
 		if err != nil {
+			log.Infof("Error adding document with ID %s: %s", docId, err)
 			return "", fmt.Errorf("Unexpected ES indexing error: %s", err)
 		}
+
 		docHash[docId] = true
 		hasher.Reset()
 	}
