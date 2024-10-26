@@ -2,9 +2,9 @@ package indexers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

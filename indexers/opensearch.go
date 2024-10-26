@@ -30,6 +30,7 @@ import (
 
 	opensearch "github.com/opensearch-project/opensearch-go"
 	opensearchutil "github.com/opensearch-project/opensearch-go/opensearchutil"
+	log "github.com/sirupsen/logrus"
 )
 
 // OSClient OpenSearch client instance
@@ -100,14 +101,17 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
-			return "", fmt.Errorf("Cannot encode document %s: %s", document, err)
+			return "", fmt.Errorf("Cannot encode document %v: %s", document, err)
 		}
+
 		hasher.Write(j)
 		docId := hex.EncodeToString(hasher.Sum(nil))
 		if _, exists := docHash[docId]; exists {
-			redundantSkipped += 1
+			log.Debugf("Skipping redundant document: %s", docId)
+			redundantSkipped++
 			continue
 		}
+
 		err = bi.Add(
 			context.Background(),
 			opensearchutil.BulkIndexerItem{
@@ -119,9 +123,13 @@ func (OpenSearchIndexer *OpenSearch) Index(documents []interface{}, opts Indexin
 					defer indexerStatsLock.Unlock()
 					indexerStats[biri.Result]++
 				},
+				OnFailure: func(c context.Context, bii opensearchutil.BulkIndexerItem, beri opensearchutil.BulkIndexerResponseItem, err error) {
+					log.Infof("Failed to index document %s: %s, error: %v", bii.DocumentID, beri.Error.Reason, err)
+				},
 			},
 		)
 		if err != nil {
+			log.Infof("Error adding document with ID %s: %s", docId, err)
 			return "", fmt.Errorf("Unexpected OpenSearch indexing error: %s", err)
 		}
 		docHash[docId] = true
