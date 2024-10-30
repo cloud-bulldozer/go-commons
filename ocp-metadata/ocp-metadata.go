@@ -361,7 +361,7 @@ func (meta *Metadata) getIPSec() (bool, string, error) {
 		}
 	}
 	if err != nil {
-		return false, ipsecType, fmt.Errorf(err.Error())
+		return false, ipsecType, err
 	}
 	if ipsecMode != "Disabled" {
 		return true, ipsecMode, nil

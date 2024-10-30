@@ -1,6 +1,8 @@
 module github.com/cloud-bulldozer/go-commons
 
-go 1.19
+go 1.22
+
+toolchain go1.22.3
 
 require (
 	github.com/elastic/go-elasticsearch/v7 v7.13.1
