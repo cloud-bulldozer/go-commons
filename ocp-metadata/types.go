@@ -14,18 +14,32 @@
 
 package ocpmetadata
 
-import "time"
+import (
+	"time"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
 
 // OCP specific constants
 const (
-	routeGroup         = "route.openshift.io"
-	routeVersion       = "v1"
-	routeResource      = "routes"
+	running            = "Running"
 	completedUpdate    = "Completed"
 	workerNodeSelector = "node-role.kubernetes.io/worker=,node-role.kubernetes.io/infra!=,node-role.kubernetes.io/workload!="
 	monitoringNs       = "openshift-monitoring"
 	tokenExpiration    = 10 * time.Hour
 )
+
+var routeGVR = schema.GroupVersionResource{
+	Group:    "route.openshift.io",
+	Version:  "v1",
+	Resource: "routes",
+}
+
+var vmiGVR = schema.GroupVersionResource{
+	Group:    "kubevirt.io",
+	Version:  "v1",
+	Resource: "virtualmachineinstances",
+}
 
 // infraObj
 // TODO at the moment can be used to decode some AWS platform specific information from the infrastructure object

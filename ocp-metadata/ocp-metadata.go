@@ -129,7 +129,7 @@ func (meta *Metadata) GetCurrentPodCount() (int, error) {
 	if err != nil {
 		return podCount, err
 	}
-	podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=" + running})
 	if err != nil {
 		return podCount, err
 	}
@@ -144,13 +144,32 @@ func (meta *Metadata) GetCurrentPodCount() (int, error) {
 	return podCount, nil
 }
 
+// Returns the number of current running VMIs in the cluster
+func (meta *Metadata) GetCurrentVMICount() (int, error) {
+	var vmiCount int
+	vmis, err := meta.dynamicClient.Resource(vmiGVR).Namespace(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return vmiCount, err
+	}
+	for _, vmi := range vmis.Items {
+		status, found, err := unstructured.NestedString(vmi.UnstructuredContent(), "status", "phase")
+		if !found {
+			return vmiCount, fmt.Errorf("phase field not found in kubevirt.io/v1/namespaces/%s/virtualmachineinstances/%s status", vmi.GetNamespace(), vmi.GetName())
+		}
+		if err != nil {
+			return vmiCount, err
+		}
+		if status == running {
+			vmiCount++
+		}
+	}
+	return vmiCount, nil
+}
+
 // GetDefaultIngressDomain returns default ingress domain of the default ingress controller
 func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
-	ingressController, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
-		Group:    "operator.openshift.io",
-		Version:  "v1",
-		Resource: "ingresscontrollers",
-	}).Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
+	ingressController, err := meta.dynamicClient.Resource(vmiGVR).
+		Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -163,11 +182,7 @@ func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
 
 // getPrometheusURL Returns a valid prometheus endpoint from the openshift-monitoring/prometheus-k8s route
 func getPrometheusURL(dynamicClient dynamic.Interface) (string, error) {
-	route, err := dynamicClient.Resource(schema.GroupVersionResource{
-		Group:    routeGroup,
-		Version:  routeVersion,
-		Resource: routeResource,
-	}).Namespace(monitoringNs).Get(context.TODO(), "prometheus-k8s", metav1.GetOptions{})
+	route, err := dynamicClient.Resource(routeGVR).Namespace(monitoringNs).Get(context.TODO(), "prometheus-k8s", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
