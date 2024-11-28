@@ -397,7 +397,7 @@ func (meta *Metadata) GetOCPVirtualizationVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if virtOpVers, ok := virtOp.Labels["app.kubernetes.io/verssion"]; ok {
+	if virtOpVers, ok := virtOp.Labels["app.kubernetes.io/version"]; ok {
 		return virtOpVers, nil
 	} else {
 		return "", fmt.Errorf("label app.kubernetes.io/version not found in virt-operator deployment")
