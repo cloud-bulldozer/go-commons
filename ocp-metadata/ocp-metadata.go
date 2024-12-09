@@ -391,3 +391,15 @@ func toMap(str string) (map[string]interface{}, error) {
 	}
 	return config, nil
 }
+
+func (meta *Metadata) GetOCPVirtualizationVersion() (string, error) {
+	virtOp, err := meta.clientSet.AppsV1().Deployments("openshift-cnv").Get(context.TODO(), "virt-operator", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if virtOpVers, ok := virtOp.Labels["app.kubernetes.io/version"]; ok {
+		return virtOpVers, nil
+	} else {
+		return "", fmt.Errorf("label app.kubernetes.io/version not found in virt-operator deployment")
+	}
+}
