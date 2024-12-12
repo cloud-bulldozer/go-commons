@@ -168,7 +168,7 @@ func (meta *Metadata) GetCurrentVMICount() (int, error) {
 
 // GetDefaultIngressDomain returns default ingress domain of the default ingress controller
 func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
-	ingressController, err := meta.dynamicClient.Resource(routeGVR).
+	ingressController, err := meta.dynamicClient.Resource(ingressControllerGRV).
 		Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
 		return "", err

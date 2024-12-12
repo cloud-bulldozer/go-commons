@@ -35,6 +35,12 @@ var routeGVR = schema.GroupVersionResource{
 	Resource: "routes",
 }
 
+var ingressControllerGRV = schema.GroupVersionResource{
+	Group:    "operator.openshift.io",
+	Version:  "v1",
+	Resource: "ingresscontrollers",
+}
+
 var vmiGVR = schema.GroupVersionResource{
 	Group:    "kubevirt.io",
 	Version:  "v1",
