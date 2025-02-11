@@ -31,7 +31,8 @@ var searchFunc = func(o ...func(*esapi.SearchRequest)) (*esapi.Response, error) 
 var _ = Describe("Tests for elastic.go", func() {
 	Context("Tests for NewComparator", func() {
 		var index string
-		var client elasticsearch.Client
+		client, err := elasticsearch.NewDefaultClient()
+		Expect(err).To(BeNil())
 		var expectedComparator Comparator
 		BeforeEach(func() {
 			index = "go-commons-test"
@@ -73,7 +74,7 @@ var _ = Describe("Tests for elastic.go", func() {
 				defer res.Body.Close()
 				return res, nil
 			}
-			comparator = NewComparator(*client, "placeholder")
+			comparator = NewComparator(client, "placeholder")
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -82,7 +83,7 @@ var _ = Describe("Tests for elastic.go", func() {
 
 		It("Test2 no error", func() {
 			client.Search = searchFunc
-			comparator = NewComparator(*client, "_all")
+			comparator = NewComparator(client, "_all")
 
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
@@ -91,7 +92,7 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("Test3 not a valid link", func() {
-			comparator = NewComparator(*client, "_all")
+			comparator = NewComparator(client, "_all")
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(0))
@@ -109,7 +110,7 @@ var _ = Describe("Tests for elastic.go", func() {
 				defer res.Body.Close()
 				return res, nil
 			}
-			comparator = NewComparator(*client, "_all")
+			comparator = NewComparator(client, "_all")
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -126,7 +127,7 @@ var _ = Describe("Tests for elastic.go", func() {
 				defer res.Body.Close()
 				return res, nil
 			}
-			comparator = NewComparator(*client, "placeholder")
+			comparator = NewComparator(client, "placeholder")
 			_, err := comparator.queryStringStats(query, field)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -149,7 +150,7 @@ var _ = Describe("Tests for elastic.go", func() {
 
 		It("Test1 no error", func() {
 			client.Search = searchFunc
-			comparator := NewComparator(*client, "_all")
+			comparator := NewComparator(client, "_all")
 			_, err := comparator.Compare("placeholder", "placeholder", "max", 1.0, 1.0)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -158,7 +159,7 @@ var _ = Describe("Tests for elastic.go", func() {
 
 		It("Test2 negative value", func() {
 			client.Search = searchFunc
-			comparator := NewComparator(*client, "_all")
+			comparator := NewComparator(client, "_all")
 			_, err := comparator.Compare("placeholder", "placeholder", "min", -1.0, 1.0)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -167,7 +168,7 @@ var _ = Describe("Tests for elastic.go", func() {
 
 		It("Test3 negative tolerance", func() {
 			client.Search = searchFunc
-			comparator := NewComparator(*client, "_all")
+			comparator := NewComparator(client, "_all")
 			_, err := comparator.Compare("placeholder", "placeholder", "avg", 1.0, -1.0)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -176,7 +177,7 @@ var _ = Describe("Tests for elastic.go", func() {
 
 		It("Test4 negative tolerance", func() {
 			client.Search = searchFunc
-			comparator := NewComparator(*client, "_all")
+			comparator := NewComparator(client, "_all")
 			_, err := comparator.Compare("placeholder", "placeholder", "sum", 1.0, -1.0)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(1))
@@ -184,7 +185,7 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("Test5 no error with sum stat", func() {
-			comparator := NewComparator(*client, "_all")
+			comparator := NewComparator(client, "_all")
 			_, err := comparator.Compare("placeholder", "placeholder", "sum", 1.0, -1.0)
 			//Asserting the number of times the mock implementation is called
 			Expect(c).To(BeEquivalentTo(0))

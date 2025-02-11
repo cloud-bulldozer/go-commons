@@ -30,7 +30,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // Metadata object
@@ -200,7 +200,7 @@ func getPrometheusURL(dynamicClient dynamic.Interface) (string, error) {
 func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
 	request := authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
-			ExpirationSeconds: pointer.Int64(int64(tokenExpiration.Seconds())),
+			ExpirationSeconds: ptr.To(int64(tokenExpiration.Seconds())),
 		},
 	}
 	response, err := clientset.CoreV1().ServiceAccounts(monitoringNs).CreateToken(context.TODO(), "prometheus-k8s", &request, metav1.CreateOptions{})
