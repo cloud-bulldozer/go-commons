@@ -24,12 +24,12 @@ import (
 
 // Comparator object
 type Comparator struct {
-	client elasticsearch.Client
+	client *elasticsearch.Client
 	index  string
 }
 
 // NewComparator returns a new comparator for the given index and elasticsearch client
-func NewComparator(client elasticsearch.Client, index string) Comparator {
+func NewComparator(client *elasticsearch.Client, index string) Comparator {
 	return Comparator{
 		client: client,
 		index:  index,

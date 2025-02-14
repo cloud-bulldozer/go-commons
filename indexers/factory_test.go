@@ -15,7 +15,7 @@ var _ = Describe("Factory.go Unit Tests: NewIndexer()", func() {
 	var testcase newMethodTestcase
 	BeforeEach(func() {
 		testcase = newMethodTestcase{
-			indexerConfig: IndexerConfig{Type: "elastic",
+			indexerConfig: IndexerConfig{Type: "opensearch",
 				Servers:            []string{""},
 				Index:              "go-commons-test",
 				InsecureSkipVerify: true,
@@ -46,7 +46,7 @@ var _ = Describe("Factory.go Unit Tests: NewIndexer()", func() {
 			testcase.indexerConfig.Servers = []string{testcase.mockServer.URL}
 			_, err := NewIndexer(testcase.indexerConfig)
 
-			Expect(err).To(BeEquivalentTo(errors.New("unexpected ES status code: 502")))
+			Expect(err.Error()).To(BeEquivalentTo("OpenSearch health check failed: cannot retrieve information from OpenSearch"))
 		})
 
 		It("returns indexer and err unknown indexer", func() {
