@@ -31,26 +31,23 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+
+	k8sconnector "github.com/cloud-bulldozer/go-commons/k8s-connector"
 )
 
 // Metadata object
 type Metadata struct {
-	clientSet     *kubernetes.Clientset
-	restConfig    *rest.Config
-	dynamicClient dynamic.Interface
+	connector k8sconnector.K8SConnector
 }
 
 // NewMetadata instantiates a new OCP metadata discovery agent
 func NewMetadata(restConfig *rest.Config) (Metadata, error) {
-	cs, err := kubernetes.NewForConfig(restConfig)
+	k8sConnector, err := k8sconnector.NewK8SConnector(restConfig)
 	if err != nil {
 		return Metadata{}, err
 	}
-	dc, err := dynamic.NewForConfig(restConfig)
 	return Metadata{
-		clientSet:     cs,
-		dynamicClient: dc,
-		restConfig:    restConfig,
+		connector: k8sConnector,
 	}, err
 }
 
@@ -114,22 +111,22 @@ func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 
 // GetPrometheus Returns Prometheus URL and a valid Bearer token
 func (meta *Metadata) GetPrometheus() (string, string, error) {
-	prometheusURL, err := getPrometheusURL(meta.dynamicClient)
+	prometheusURL, err := getPrometheusURL(meta.connector.DynamicClient())
 	if err != nil {
 		return prometheusURL, "", err
 	}
-	prometheusToken, err := getBearerToken(meta.clientSet)
+	prometheusToken, err := getBearerToken(meta.connector.ClientSet())
 	return prometheusURL, prometheusToken, err
 }
 
 // GetCurrentPodCount returns the number of current running pods across all worker nodes
 func (meta *Metadata) GetCurrentPodCount() (int, error) {
 	var podCount int
-	nodeList, err := meta.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: workerNodeSelector})
+	nodeList, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: workerNodeSelector})
 	if err != nil {
 		return podCount, err
 	}
-	podList, err := meta.clientSet.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=" + running})
+	podList, err := meta.connector.ClientSet().CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=" + running})
 	if err != nil {
 		return podCount, err
 	}
@@ -147,7 +144,7 @@ func (meta *Metadata) GetCurrentPodCount() (int, error) {
 // Returns the number of current running VMIs in the cluster
 func (meta *Metadata) GetCurrentVMICount() (int, error) {
 	var vmiCount int
-	vmis, err := meta.dynamicClient.Resource(vmiGVR).Namespace(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	vmis, err := meta.connector.DynamicClient().Resource(vmiGVR).Namespace(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return vmiCount, err
 	}
@@ -168,7 +165,7 @@ func (meta *Metadata) GetCurrentVMICount() (int, error) {
 
 // GetDefaultIngressDomain returns default ingress domain of the default ingress controller
 func (meta *Metadata) GetDefaultIngressDomain() (string, error) {
-	ingressController, err := meta.dynamicClient.Resource(ingressControllerGRV).
+	ingressController, err := meta.connector.DynamicClient().Resource(ingressControllerGRV).
 		Namespace("openshift-ingress-operator").Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -197,7 +194,7 @@ func getPrometheusURL(dynamicClient dynamic.Interface) (string, error) {
 }
 
 // getBearerToken returns a valid bearer token from the openshift-monitoring/prometheus-k8s service account
-func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
+func getBearerToken(clientset kubernetes.Interface) (string, error) {
 	request := authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
 			ExpirationSeconds: ptr.To(int64(tokenExpiration.Seconds())),
@@ -210,7 +207,7 @@ func getBearerToken(clientset *kubernetes.Clientset) (string, error) {
 // getInfraDetails returns a pointer to an infrastructure object or nil
 func (meta *Metadata) getInfraDetails() (*infraObj, error) {
 	var infraJSON infraObj
-	infra, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+	infra, err := meta.connector.DynamicClient().Resource(schema.GroupVersionResource{
 		Group:    "config.openshift.io",
 		Version:  "v1",
 		Resource: "infrastructures",
@@ -231,12 +228,12 @@ func (meta *Metadata) getInfraDetails() (*infraObj, error) {
 func (meta *Metadata) getVersionInfo() (versionObj, error) {
 	var cv clusterVersion
 	var versionInfo versionObj
-	version, err := meta.clientSet.ServerVersion()
+	version, err := meta.connector.ClientSet().Discovery().ServerVersion()
 	if err != nil {
 		return versionInfo, err
 	}
 	versionInfo.k8sVersion = version.GitVersion
-	clusterVersion, err := meta.dynamicClient.Resource(
+	clusterVersion, err := meta.connector.DynamicClient().Resource(
 		schema.GroupVersionResource{
 			Group:    "config.openshift.io",
 			Version:  "v1",
@@ -268,7 +265,7 @@ func (meta *Metadata) getVersionInfo() (versionObj, error) {
 
 // getNodesInfo returns node information
 func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
-	nodes, err := meta.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -301,7 +298,7 @@ func (meta *Metadata) getNodesInfo(clusterMetadata *ClusterMetadata) error {
 
 // getSDNInfo returns SDN type
 func (meta *Metadata) getSDNInfo() (string, error) {
-	networkData, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+	networkData, err := meta.connector.DynamicClient().Resource(schema.GroupVersionResource{
 		Group:    "config.openshift.io",
 		Version:  "v1",
 		Resource: "networks",
@@ -357,7 +354,7 @@ func (meta *Metadata) getControlPlaneArch(installConfig map[string]interface{}) 
 // getIPSec returns if the cluster has IPSec enabled
 func (meta *Metadata) getIPSec() (bool, string, error) {
 	ipsecType := "Disabled"
-	networks, err := meta.dynamicClient.Resource(schema.GroupVersionResource{
+	networks, err := meta.connector.DynamicClient().Resource(schema.GroupVersionResource{
 		Group:    "operator.openshift.io",
 		Version:  "v1",
 		Resource: "networks",
@@ -386,7 +383,7 @@ func (meta *Metadata) getIPSec() (bool, string, error) {
 
 // getClusterConfig returns cluster configuration yaml
 func (meta *Metadata) getClusterConfig() (map[string]interface{}, error) {
-	config, err := meta.clientSet.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "cluster-config-v1", metav1.GetOptions{})
+	config, err := meta.connector.ClientSet().CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "cluster-config-v1", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +405,7 @@ func toMap(str string) (map[string]interface{}, error) {
 }
 
 func (meta *Metadata) GetOCPVirtualizationVersion() (string, error) {
-	virtOp, err := meta.clientSet.AppsV1().Deployments("openshift-cnv").Get(context.TODO(), "virt-operator", metav1.GetOptions{})
+	virtOp, err := meta.connector.ClientSet().AppsV1().Deployments("openshift-cnv").Get(context.TODO(), "virt-operator", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
