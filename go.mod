@@ -1,4 +1,4 @@
-module github.com/cloud-bulldozer/go-commons
+module github.com/cloud-bulldozer/go-commons/v2
 
 go 1.23.0
 

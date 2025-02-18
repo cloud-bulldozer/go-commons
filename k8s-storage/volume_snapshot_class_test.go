@@ -29,7 +29,7 @@ import (
 	fakestoragev1 "k8s.io/client-go/kubernetes/typed/storage/v1/fake"
 	"k8s.io/client-go/testing"
 
-	"github.com/cloud-bulldozer/go-commons/mocks"
+	"github.com/cloud-bulldozer/go-commons/v2/mocks"
 )
 
 var _ = Describe("Tests for K8S Volume Snapshot", func() {
@@ -127,7 +127,7 @@ var _ = Describe("Tests for K8S Volume Snapshot", func() {
 	})
 
 	Context("GetVolumeSnapshotClassNameForStorageClass", func() {
-		Context("Success", func(){
+		Context("Success", func() {
 			BeforeEach(func() {
 				getAndRegisterDynamicClient()
 				getAndRegisterClientSet()
@@ -139,7 +139,7 @@ var _ = Describe("Tests for K8S Volume Snapshot", func() {
 				Expect(name).To(Equal(expectedVolumeSnapshotClassName))
 			})
 		})
-		Context("Failure", func(){
+		Context("Failure", func() {
 			var (
 				clientSet *fake.Clientset
 			)
