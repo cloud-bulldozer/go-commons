@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
-	k8sconnector "github.com/cloud-bulldozer/go-commons/k8s-connector"
+	k8sconnector "github.com/cloud-bulldozer/go-commons/v2/k8s-connector"
 )
 
 func GetDataImportCronSourceFormatForStorageClass(k8sConnector k8sconnector.K8SConnector, storageClassName string) (cdiv1beta1.DataImportCronSourceFormat, error) {

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	k8sconnector "github.com/cloud-bulldozer/go-commons/k8s-connector"
+	k8sconnector "github.com/cloud-bulldozer/go-commons/v2/k8s-connector"
 )
 
 func getVolumeSnapshotClassNameForProvisioner(k8sConnector k8sconnector.K8SConnector, provisioner string) (string, error) {

@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/dynamic/fake"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
-	"github.com/cloud-bulldozer/go-commons/mocks"
+	"github.com/cloud-bulldozer/go-commons/v2/mocks"
 )
 
 var _ = Describe("Tests for K8S Storage Profile", func() {
@@ -115,7 +115,7 @@ var _ = Describe("Tests for K8S Storage Profile", func() {
 				Expect(err.Error()).To(Equal("status field of StorageProfile object does not have a dataImportCronSourceFormat field"))
 			})
 
-			It("Should return an error if the StorageProfile does not exist", func(){
+			It("Should return an error if the StorageProfile does not exist", func() {
 				_, err := GetDataImportCronSourceFormatForStorageClass(mockK8SConnector, "foo")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("storageprofiles.cdi.kubevirt.io \"foo\" not found"))

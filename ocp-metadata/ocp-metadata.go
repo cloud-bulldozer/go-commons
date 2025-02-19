@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
-	k8sconnector "github.com/cloud-bulldozer/go-commons/k8s-connector"
+	k8sconnector "github.com/cloud-bulldozer/go-commons/v2/k8s-connector"
 )
 
 // Metadata object

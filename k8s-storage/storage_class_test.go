@@ -29,7 +29,7 @@ import (
 	"k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
 
-	"github.com/cloud-bulldozer/go-commons/mocks"
+	"github.com/cloud-bulldozer/go-commons/v2/mocks"
 )
 
 var _ = Describe("Tests for K8S Storage Class", func() {
@@ -43,13 +43,13 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		mockK8SConnector = mocks.NewMockK8SConnector(mockCtrl)
 	})
 
-	Context("StorageClassExists", func(){
+	Context("StorageClassExists", func() {
 
 		Context("Success", func() {
 			var (
 				storageClassName = "test-sc"
 			)
-			BeforeEach(func(){
+			BeforeEach(func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -74,7 +74,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		})
 
 		Context("Failure", func() {
-			It("Should return an error when get fails", func(){
+			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
 				clientSet := fake.NewSimpleClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
@@ -96,11 +96,11 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 
 		Context("Success", func() {
 			var (
-				defaultStorageClassName = "default-sc"
+				defaultStorageClassName     = "default-sc"
 				virtDefaultStorageClassName = "default-virt-sc"
-				nonDefaultStorageClassName = "another-sc"
+				nonDefaultStorageClassName  = "another-sc"
 			)
-			BeforeEach(func(){
+			BeforeEach(func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -127,21 +127,21 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				mockK8SConnector.EXPECT().ClientSet().Return(clientSet)
 			})
 
-			It("Should return the default storage class when virt is not prefered", func(){
+			It("Should return the default storage class when virt is not prefered", func() {
 				name, err := GetDefaultStorageClassName(mockK8SConnector, false)
 				Expect(err).To(BeNil())
 				Expect(name).To(Equal(defaultStorageClassName))
 			})
 
-			It("Should return the virt default storage class when virt is prefered", func(){
+			It("Should return the virt default storage class when virt is prefered", func() {
 				name, err := GetDefaultStorageClassName(mockK8SConnector, true)
 				Expect(err).To(BeNil())
 				Expect(name).To(Equal(virtDefaultStorageClassName))
 			})
 		})
 
-		Context("Failure", func(){
-			It("Should return error when no default StorageClass was set", func(){
+		Context("Failure", func() {
+			It("Should return error when no default StorageClass was set", func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -154,7 +154,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				Expect(err).To(Equal(fmt.Errorf("no default StorageClass was set")))
 			})
 
-			It("Should return an error when list fails", func(){
+			It("Should return an error when list fails", func() {
 				errorMessage := "Error listing storage classes"
 				clientSet := fake.NewSimpleClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
@@ -172,15 +172,15 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		})
 	})
 
-	Context("StorageClassSupportsVolumeExpansion", func(){
+	Context("StorageClassSupportsVolumeExpansion", func() {
 
-		Context("Success", func(){
+		Context("Success", func() {
 			var (
-				scSupportsVolumeExpansionTrue = "yes"
+				scSupportsVolumeExpansionTrue  = "yes"
 				scSupportsVolumeExpansionFalse = "no"
-				scSupportsVolumeExpansionNone = "none"
+				scSupportsVolumeExpansionNone  = "none"
 			)
-			BeforeEach(func(){
+			BeforeEach(func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -203,19 +203,19 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				mockK8SConnector.EXPECT().ClientSet().Return(clientSet)
 			})
 
-			It("Should return true when the StorageClass supports VolumeExpansion", func(){
+			It("Should return true when the StorageClass supports VolumeExpansion", func() {
 				supported, err := StorageClassSupportsVolumeExpansion(mockK8SConnector, scSupportsVolumeExpansionTrue)
 				Expect(err).To(BeNil())
 				Expect(supported).To(BeTrue())
 			})
 
-			It("Should return false when the StorageClass does not support VolumeExpansion", func(){
+			It("Should return false when the StorageClass does not support VolumeExpansion", func() {
 				supported, err := StorageClassSupportsVolumeExpansion(mockK8SConnector, scSupportsVolumeExpansionFalse)
 				Expect(err).To(BeNil())
 				Expect(supported).To(BeFalse())
 			})
 
-			It("Should return false when the VolumeExpansion is not set", func(){
+			It("Should return false when the VolumeExpansion is not set", func() {
 				supported, err := StorageClassSupportsVolumeExpansion(mockK8SConnector, scSupportsVolumeExpansionNone)
 				Expect(err).To(BeNil())
 				Expect(supported).To(BeFalse())
@@ -223,7 +223,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		})
 
 		Context("Failure", func() {
-			It("Should return an error when get fails", func(){
+			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
 				clientSet := fake.NewSimpleClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
@@ -241,14 +241,14 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		})
 	})
 
-	Context("getStorageClassProvisioner", func(){
+	Context("getStorageClassProvisioner", func() {
 
-		Context("Success", func(){
+		Context("Success", func() {
 			var (
-				scName = "foo"
+				scName          = "foo"
 				provisionerName = "foo.example.com"
 			)
-			BeforeEach(func(){
+			BeforeEach(func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -260,7 +260,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				mockK8SConnector.EXPECT().ClientSet().Return(clientSet)
 			})
 
-			It("Should return the name of the provisioner", func(){
+			It("Should return the name of the provisioner", func() {
 				name, err := getStorageClassProvisioner(mockK8SConnector, scName)
 				Expect(err).To(BeNil())
 				Expect(name).To(Equal(provisionerName))
@@ -268,7 +268,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		})
 
 		Context("Failure", func() {
-			It("Should return an error when get fails", func(){
+			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
 				clientSet := fake.NewSimpleClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
@@ -290,11 +290,11 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 
 		Context("Success", func() {
 			var (
-				defaultStorageClassName = "default-sc"
+				defaultStorageClassName     = "default-sc"
 				virtDefaultStorageClassName = "default-virt-sc"
-				nonDefaultStorageClassName = "another-sc"
+				nonDefaultStorageClassName  = "another-sc"
 			)
-			BeforeEach(func(){
+			BeforeEach(func() {
 				clientSet := fake.NewSimpleClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
@@ -321,28 +321,28 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				mockK8SConnector.EXPECT().ClientSet().Return(clientSet)
 			})
 
-			Context("No StorageClassName was provided", func(){
-				It("Should return the default storage class when virt is not prefered", func(){
+			Context("No StorageClassName was provided", func() {
+				It("Should return the default storage class when virt is not prefered", func() {
 					name, err := GetStorageClassName(mockK8SConnector, "", false)
 					Expect(err).To(BeNil())
 					Expect(name).To(Equal(defaultStorageClassName))
 				})
 
-				It("Should return the virt default storage class when virt is prefered", func(){
+				It("Should return the virt default storage class when virt is prefered", func() {
 					name, err := GetStorageClassName(mockK8SConnector, "", true)
 					Expect(err).To(BeNil())
 					Expect(name).To(Equal(virtDefaultStorageClassName))
 				})
 			})
 
-			Context("With StorageClassName", func(){
-				It("Should return the same name when the StorageClass exists", func(){
+			Context("With StorageClassName", func() {
+				It("Should return the same name when the StorageClass exists", func() {
 					name, err := GetStorageClassName(mockK8SConnector, nonDefaultStorageClassName, false)
 					Expect(err).To(BeNil())
 					Expect(name).To(Equal(nonDefaultStorageClassName))
 				})
 
-				It("Should return an empty string if the StorageClass does not exist", func(){
+				It("Should return an empty string if the StorageClass does not exist", func() {
 					name, err := GetStorageClassName(mockK8SConnector, "foo", false)
 					Expect(err).To(BeNil())
 					Expect(name).To(Equal(""))
