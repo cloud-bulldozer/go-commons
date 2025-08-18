@@ -14,3 +14,6 @@ Make sure to install it before running.
 ### `unittest`
 The `unittest` tests are executed using [ginkgo](https://onsi.github.io/ginkgo/).
 Make sure to install it locally before running.
+
+### `build-cli`
+Will build a simple CLI tool to retrieve the cluster metadata.
