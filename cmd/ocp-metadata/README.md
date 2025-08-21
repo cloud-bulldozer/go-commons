@@ -33,14 +33,9 @@ sudo cp bin/ocp-metadata /usr/local/bin/
 # Get help
 ocp-metadata --help
 
-# Get cluster metadata in table format (default)
+# Get cluster metadata in json format (default)
 ocp-metadata
 
-# Get cluster metadata in JSON format
-ocp-metadata --output json
-
-# Get cluster metadata in YAML format
-ocp-metadata --output yaml
 ```
 
 ### Authentication
@@ -56,53 +51,13 @@ The CLI tool supports multiple authentication methods:
    ```bash
    ocp-metadata
    ```
+3. **KUBECONFIG env var** (set the KUBECONFIG env var)
+   ```bash
+   ocp-metadata
+   ```
 
-### Output Formats
-
-The tool supports three output formats:
-
-- **table** (default): Human-readable table format
-- **json**: JSON format for programmatic consumption
-- **yaml**: YAML format for configuration files
-
-```bash
-# Table format (default)
-ocp-metadata
-
-# JSON format
-ocp-metadata -o json
-
-# YAML format
-ocp-metadata -o yaml
-```
 
 ## Example Output
-
-### Cluster Metadata (Table Format)
-
-```
-Field                Value
------                -----
-Cluster Name         my-ocp-cluster
-Platform             aws
-Cluster Type         self-managed
-OCP Version          4.14.0
-OCP Major Version    4.14
-K8s Version          v1.27.0+abc123
-Region               us-east-1
-SDN Type             OVNKubernetes
-Total Nodes          6
-Master Nodes         3 (m5.xlarge)
-Worker Nodes         3 (m5.large)
-Infra Nodes          0 ()
-Other Nodes          0
-Worker Arch          amd64
-Control Plane Arch   amd64
-FIPS                 false
-Publish              External
-IPSec                false
-IPSec Mode           Disabled
-```
 
 ### Cluster Metadata (JSON Format)
 

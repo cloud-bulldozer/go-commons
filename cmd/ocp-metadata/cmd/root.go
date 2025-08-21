@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -30,8 +29,7 @@ import (
 )
 
 var (
-	kubeconfig   string
-	outputFormat string
+	kubeconfig string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -78,14 +76,16 @@ func Execute() error {
 func init() {
 	// Global flags
 	rootCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "Path to kubeconfig file (default is $HOME/.kube/config)")
-	rootCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "Output format (json|yaml|table)")
 }
 
 // getRestConfig returns a Kubernetes REST config
 func getRestConfig() (*rest.Config, error) {
 	if kubeconfig == "" {
-		if home := homedir.HomeDir(); home != "" {
-			kubeconfig = filepath.Join(home, ".kube", "config")
+		kubeconfig = os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = filepath.Join(home, ".kube", "config")
+			}
 		}
 	}
 
@@ -100,72 +100,7 @@ func getRestConfig() (*rest.Config, error) {
 
 // outputData formats and prints data based on the output format
 func outputData(data interface{}) error {
-	switch outputFormat {
-	case "json":
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(data)
-	case "yaml":
-		encoder := yaml.NewEncoder(os.Stdout)
-		defer encoder.Close()
-		return encoder.Encode(data)
-	case "table":
-		return outputTable(data)
-	default:
-		return fmt.Errorf("unsupported output format: %s", outputFormat)
-	}
-}
-
-// outputTable handles table format output for different data types
-func outputTable(data interface{}) error {
-	switch v := data.(type) {
-	case ocpmetadata.ClusterMetadata:
-		return printClusterMetadataTable(v)
-	case map[string]interface{}:
-		return printMapTable(v)
-	case string:
-		fmt.Println(v)
-		return nil
-	default:
-		// Fall back to JSON for complex types
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(data)
-	}
-}
-
-// printClusterMetadataTable prints cluster metadata in table format
-func printClusterMetadataTable(metadata ocpmetadata.ClusterMetadata) error {
-	fmt.Printf("%-20s %s\n", "Field", "Value")
-	fmt.Printf("%-20s %s\n", "-----", "-----")
-	fmt.Printf("%-20s %s\n", "Cluster Name", metadata.ClusterName)
-	fmt.Printf("%-20s %s\n", "Platform", metadata.Platform)
-	fmt.Printf("%-20s %s\n", "Cluster Type", metadata.ClusterType)
-	fmt.Printf("%-20s %s\n", "OCP Version", metadata.OCPVersion)
-	fmt.Printf("%-20s %s\n", "OCP Major Version", metadata.OCPMajorVersion)
-	fmt.Printf("%-20s %s\n", "K8s Version", metadata.K8SVersion)
-	fmt.Printf("%-20s %s\n", "Region", metadata.Region)
-	fmt.Printf("%-20s %s\n", "SDN Type", metadata.SDNType)
-	fmt.Printf("%-20s %d\n", "Total Nodes", metadata.TotalNodes)
-	fmt.Printf("%-20s %d (%s)\n", "Master Nodes", metadata.MasterNodesCount, metadata.MasterNodesType)
-	fmt.Printf("%-20s %d (%s)\n", "Worker Nodes", metadata.WorkerNodesCount, metadata.WorkerNodesType)
-	fmt.Printf("%-20s %d (%s)\n", "Infra Nodes", metadata.InfraNodesCount, metadata.InfraNodesType)
-	fmt.Printf("%-20s %d\n", "Other Nodes", metadata.OtherNodesCount)
-	fmt.Printf("%-20s %s\n", "Worker Arch", metadata.WorkerArch)
-	fmt.Printf("%-20s %s\n", "Control Plane Arch", metadata.ControlPlaneArch)
-	fmt.Printf("%-20s %t\n", "FIPS", metadata.Fips)
-	fmt.Printf("%-20s %s\n", "Publish", metadata.Publish)
-	fmt.Printf("%-20s %t\n", "IPSec", metadata.Ipsec)
-	fmt.Printf("%-20s %s\n", "IPSec Mode", metadata.IpsecMode)
-	return nil
-}
-
-// printMapTable prints a map in table format
-func printMapTable(data map[string]interface{}) error {
-	fmt.Printf("%-20s %s\n", "Field", "Value")
-	fmt.Printf("%-20s %s\n", "-----", "-----")
-	for key, value := range data {
-		fmt.Printf("%-20s %v\n", key, value)
-	}
-	return nil
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(data)
 }
