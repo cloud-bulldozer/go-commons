@@ -119,10 +119,10 @@ func (meta *Metadata) GetPrometheus() (string, string, error) {
 	return prometheusURL, prometheusToken, err
 }
 
-// GetCurrentPodCount returns the number of current running pods across all worker nodes
-func (meta *Metadata) GetCurrentPodCount() (int, error) {
+// GetCurrentPodCount returns the number of running pods across on nodes matching the given labelSelector
+func (meta *Metadata) GetCurrentPodCount(labelSelector string) (int, error) {
 	var podCount int
-	nodeList, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: workerNodeSelector})
+	nodeList, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return podCount, err
 	}
