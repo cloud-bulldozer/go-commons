@@ -122,20 +122,20 @@ func (meta *Metadata) GetPrometheus() (string, string, error) {
 // GetCurrentPodCount returns the number of running pods on nodes matching the given label selector
 func (meta *Metadata) GetCurrentPodCount(nodeLabelSelector string) (int, error) {
 	var podCount int
-	mapList := make(map[string]bool)
 	nodeList, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: nodeLabelSelector})
 	if err != nil {
 		return podCount, err
 	}
+	nodeMap := make(map[string]bool, len(nodeList.Items))
 	for _, n := range nodeList.Items {
-		mapList[n.Name] = true
+		nodeMap[n.Name] = true
 	}
 	podList, err := meta.connector.ClientSet().CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=" + running})
 	if err != nil {
 		return podCount, err
 	}
 	for _, pod := range podList.Items {
-		if _, ok := mapList[pod.Spec.NodeName]; !ok {
+		if nodeMap[pod.Spec.NodeName] {
 			podCount++
 		}
 	}
