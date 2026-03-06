@@ -1,6 +1,7 @@
 package indexers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -95,7 +96,7 @@ var _ = Describe("Tests for local.go", func() {
 		It("Err is returned metricsdirectory has fault", func() {
 			indexer.metricsDirectory = "abc"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).To(BeEquivalentTo(errors.New("Error creating metrics file abc/placeholder.json: open abc/placeholder.json: no such file or directory")))
+			Expect(err).To(MatchError(errors.New("Error writing metrics file abc/placeholder.json: open abc/placeholder.json: no such file or directory")))
 		})
 
 		It("Err is returned by documents not processed", func() {
@@ -105,7 +106,43 @@ var _ = Describe("Tests for local.go", func() {
 		})
 		It("returns err no empty document list", func() {
 			_, err := indexer.Index(emtpyTestCase.documents, emtpyTestCase.opts)
-			Expect(err).To(BeEquivalentTo(fmt.Errorf("Empty document list in %v", emtpyTestCase.opts.MetricName)))
+			Expect(err).To(MatchError(fmt.Errorf("Empty document list in %v", emtpyTestCase.opts.MetricName)))
+		})
+
+		It("returns err when MetricName is empty", func() {
+			testcase.opts.MetricName = ""
+			_, err := indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(MatchError(errors.New("MetricName shouldn't be empty")))
+		})
+
+		It("appends documents to existing metric file", func() {
+			existingDocs := []interface{}{"old-doc", map[string]interface{}{"key": "value"}}
+			content, err := json.Marshal(existingDocs)
+			Expect(err).To(BeNil())
+
+			filename := path.Join(indexer.metricsDirectory, testcase.opts.MetricName+".json")
+			err = os.WriteFile(filename, content, 0644)
+			Expect(err).To(BeNil())
+
+			_, err = indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(BeNil())
+
+			updatedContent, err := os.ReadFile(filename)
+			Expect(err).To(BeNil())
+
+			var updatedDocs []interface{}
+			err = json.Unmarshal(updatedContent, &updatedDocs)
+			Expect(err).To(BeNil())
+			Expect(len(updatedDocs)).To(Equal(len(existingDocs) + len(testcase.documents)))
+		})
+
+		It("returns err when existing metric file has invalid JSON", func() {
+			filename := path.Join(indexer.metricsDirectory, testcase.opts.MetricName+".json")
+			err := os.WriteFile(filename, []byte("not-json"), 0644)
+			Expect(err).To(BeNil())
+
+			_, err = indexer.Index(testcase.documents, testcase.opts)
+			Expect(err).To(MatchError(errors.New("JSON decoding error in abc/placeholder.json: invalid character 'o' in literal null (expecting 'u')")))
 		})
 	})
 })
