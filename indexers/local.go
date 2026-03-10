@@ -47,14 +47,20 @@ func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error
 	}
 	metricName := fmt.Sprintf("%s.json", opts.MetricName)
 	filename := path.Join(l.metricsDirectory, metricName)
-	f, err := os.Create(filename)
-	if err != nil {
-		return "", fmt.Errorf("Error creating metrics file %s: %s", filename, err)
+	if content, err := os.ReadFile(filename); err == nil {
+		var existingDocs []interface{}
+		if err := json.Unmarshal(content, &existingDocs); err != nil {
+			return "", fmt.Errorf("JSON decoding error in %s: %s", filename, err)
+		}
+		documents = append(existingDocs, documents...)
 	}
-	defer f.Close()
-	jsonEnc := json.NewEncoder(f)
-	if err := jsonEnc.Encode(documents); err != nil {
+
+	content, err := json.Marshal(documents)
+	if err != nil {
 		return "", fmt.Errorf("JSON encoding error: %s", err)
 	}
-	return fmt.Sprintf("File %s created with %d documents", filename, len(documents)), nil
+	if err := os.WriteFile(filename, content, 0644); err != nil {
+		return "", fmt.Errorf("Error writing metrics file %s: %s", filename, err)
+	}
+	return fmt.Sprintf("File %s now contains %d documents", filename, len(documents)), nil
 }
