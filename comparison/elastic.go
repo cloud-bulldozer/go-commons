@@ -94,7 +94,7 @@ func (c *Comparator) Compare(field, query string, stat Stat, value float64, tole
 //	}
 func (c *Comparator) queryStringStats(field, query string) (stats, error) {
 	var response QueryStringResponse
-	var queryStringRequest map[string]interface{} = map[string]interface{}{
+	var queryStringRequest = map[string]interface{}{
 		"size": 0,
 		"query": map[string]interface{}{
 			"query_string": map[string]interface{}{

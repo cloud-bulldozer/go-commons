@@ -56,8 +56,8 @@ var _ = Describe("Tests for opensearch.go", func() {
 
 		It("Returns err not a valid URL in env variable", func() {
 			testcase.indexerConfig.Servers = []string{}
-			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
-			defer os.Unsetenv("ELASTICSEARCH_URL")
+			Expect(os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")).To(Succeed())
+			defer func() { Expect(os.Unsetenv("ELASTICSEARCH_URL")).To(Succeed()) }()
 			defer testcase.mockServer.Close()
 			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("error creating the OpenSearch client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
@@ -121,7 +121,7 @@ var _ = Describe("Tests for opensearch.go", func() {
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err.Error()).To(ContainSubstring("Cannot encode document"))
+			Expect(err.Error()).To(ContainSubstring("cannot encode document"))
 		})
 
 	})

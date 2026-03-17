@@ -50,7 +50,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				storageClassName = "test-sc"
 			)
 			BeforeEach(func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: storageClassName,
@@ -76,7 +76,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		Context("Failure", func() {
 			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
-				clientSet := fake.NewSimpleClientset()
+				clientSet := fake.NewClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
 					"get",
 					"storageclasses",
@@ -101,7 +101,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				nonDefaultStorageClassName  = "another-sc"
 			)
 			BeforeEach(func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: defaultStorageClassName,
@@ -142,7 +142,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 
 		Context("Failure", func() {
 			It("Should return error when no default StorageClass was set", func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "foo",
@@ -156,7 +156,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 
 			It("Should return an error when list fails", func() {
 				errorMessage := "Error listing storage classes"
-				clientSet := fake.NewSimpleClientset()
+				clientSet := fake.NewClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
 					"list",
 					"storageclasses",
@@ -181,7 +181,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				scSupportsVolumeExpansionNone  = "none"
 			)
 			BeforeEach(func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: scSupportsVolumeExpansionTrue,
@@ -225,7 +225,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		Context("Failure", func() {
 			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
-				clientSet := fake.NewSimpleClientset()
+				clientSet := fake.NewClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
 					"get",
 					"storageclasses",
@@ -249,7 +249,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				provisionerName = "foo.example.com"
 			)
 			BeforeEach(func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: scName,
@@ -270,7 +270,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 		Context("Failure", func() {
 			It("Should return an error when get fails", func() {
 				errorMessage := "Error getting storage classes"
-				clientSet := fake.NewSimpleClientset()
+				clientSet := fake.NewClientset()
 				clientSet.StorageV1().(*fakestoragev1.FakeStorageV1).PrependReactor(
 					"get",
 					"storageclasses",
@@ -295,7 +295,7 @@ var _ = Describe("Tests for K8S Storage Class", func() {
 				nonDefaultStorageClassName  = "another-sc"
 			)
 			BeforeEach(func() {
-				clientSet := fake.NewSimpleClientset(
+				clientSet := fake.NewClientset(
 					&storagev1.StorageClass{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: defaultStorageClassName,

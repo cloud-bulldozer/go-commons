@@ -22,17 +22,17 @@ import (
 	"time"
 
 	gokitlog "github.com/go-kit/log"
+	log "github.com/sirupsen/logrus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/tsdb"
-	log "github.com/sirupsen/logrus"
 )
 
 // TSDB indexer creates native Prometheus TSDB blocks from indexed documents.
 // Each Index() call writes a complete TSDB block to the metrics directory.
 // It handles two document formats:
-// - Prometheus-style metrics: documents with "labels" (map) and "value" (number)
-// - Runtime measurements: documents with multiple numeric fields (e.g. latencies),
-//   each numeric field becomes a separate time series with a "field" label.
+//   - Prometheus-style metrics: documents with "value" (number) and optional "labels" (map)
+//   - Runtime measurements: documents with multiple numeric fields (e.g. latencies),
+//     each numeric field becomes a separate time series with a "field" label.
 type TSDB struct {
 	metricsDirectory string
 }
@@ -85,7 +85,7 @@ func (t *TSDB) Index(documents []interface{}, opts IndexingOpts) (string, error)
 	}
 
 	if len(samples) == 0 {
-		return fmt.Sprintf("TSDB indexer: no valid samples for %s", opts.MetricName), nil
+		return "", fmt.Errorf("TSDB indexer: no valid samples for %s", opts.MetricName)
 	}
 
 	if err := t.writeBlock(samples); err != nil {
@@ -96,7 +96,7 @@ func (t *TSDB) Index(documents []interface{}, opts IndexingOpts) (string, error)
 }
 
 // extractSamples converts a document map into one or more TSDB samples.
-// Prometheus-style docs (with "labels" map + "value") produce a single sample.
+// Prometheus-style docs (with "value" and optional "labels" map) produce a single sample.
 // Measurement-style docs produce one sample per numeric field.
 func extractSamples(doc map[string]interface{}, opts IndexingOpts) []tsdbSample {
 	ts := extractTimestamp(doc)
@@ -114,14 +114,19 @@ func extractSamples(doc map[string]interface{}, opts IndexingOpts) []tsdbSample 
 		return nil
 	}
 
-	// Prometheus-style metric: has "labels" map AND "value" number
-	if labelsRaw, hasLabels := doc["labels"]; hasLabels {
-		if labelsMap, ok := labelsRaw.(map[string]interface{}); ok {
-			if valueRaw, hasValue := doc["value"]; hasValue {
-				if numVal, ok := toFloat64(valueRaw); ok {
-					return promStyleSample(metricName, labelsMap, numVal, ts, doc)
+	// Prometheus-style metric: has "value" number (with optional "labels" map)
+	if valueRaw, hasValue := doc["value"]; hasValue {
+		if floatValue, ok := valueRaw.(float64); ok {
+			var labelsMap map[string]interface{}
+			if labelsRaw, hasLabels := doc["labels"]; hasLabels {
+				if lm, ok := labelsRaw.(map[string]interface{}); ok {
+					labelsMap = lm
 				}
 			}
+			if labelsMap == nil {
+				labelsMap = make(map[string]interface{})
+			}
+			return promStyleSample(metricName, labelsMap, floatValue, ts, doc)
 		}
 	}
 
@@ -215,12 +220,16 @@ func (t *TSDB) writeBlock(samples []tsdbSample) error {
 	if err != nil {
 		return fmt.Errorf("error creating TSDB block writer: %v", err)
 	}
-	defer w.Close()
+	defer func() {
+		if closeErr := w.Close(); closeErr != nil {
+			log.Infof("TSDB indexer: error closing block writer: %v", closeErr)
+		}
+	}()
 
 	app := w.Appender(context.Background())
 	for _, s := range samples {
 		if _, err := app.Append(0, s.labels, s.timestamp, s.value); err != nil {
-			log.Warnf("TSDB indexer: error appending sample: %v", err)
+			log.Infof("TSDB indexer: error appending sample: %v", err)
 		}
 	}
 
@@ -240,34 +249,12 @@ func (t *TSDB) writeBlock(samples []tsdbSample) error {
 // extractTimestamp parses the "timestamp" field from a document map.
 func extractTimestamp(doc map[string]interface{}) int64 {
 	tsRaw, ok := doc["timestamp"]
-	if !ok {
-		return 0
-	}
-	switch v := tsRaw.(type) {
-	case string:
+	if ok {
 		for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-			if t, err := time.Parse(layout, v); err == nil {
+			if t, err := time.Parse(layout, tsRaw.(string)); err == nil {
 				return t.UnixMilli()
 			}
 		}
-	case float64:
-		if v > 1e12 {
-			return int64(v)
-		}
-		return int64(v * 1000)
 	}
 	return 0
-}
-
-// toFloat64 converts a value to float64 if possible.
-func toFloat64(v interface{}) (float64, bool) {
-	switch val := v.(type) {
-	case float64:
-		return val, true
-	case int:
-		return float64(val), true
-	case int64:
-		return float64(val), true
-	}
-	return 0, false
 }

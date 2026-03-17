@@ -20,7 +20,7 @@ var _ = Describe("Tests for tsdb.go", func() {
 
 		It("creates indexer and directory successfully", func() {
 			dir := filepath.Join(os.TempDir(), "tsdb-test-new")
-			defer os.RemoveAll(dir)
+			defer func() { Expect(os.RemoveAll(dir)).To(Succeed()) }()
 			indexer, err := NewTSDBIndexer(IndexerConfig{
 				Type:             TSDBIndexer,
 				MetricsDirectory: dir,
@@ -47,7 +47,7 @@ var _ = Describe("Tests for tsdb.go", func() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(dir)
+			Expect(os.RemoveAll(dir)).To(Succeed())
 		})
 
 		It("returns error on empty document list", func() {
@@ -91,9 +91,8 @@ var _ = Describe("Tests for tsdb.go", func() {
 					"labels":     map[string]interface{}{},
 				},
 			}
-			resp, err := indexer.Index(docs, IndexingOpts{MetricName: "test"})
-			Expect(err).To(BeNil())
-			Expect(resp).To(ContainSubstring("no valid samples"))
+			_, err := indexer.Index(docs, IndexingOpts{MetricName: "test"})
+			Expect(err).To(MatchError("TSDB indexer: no valid samples for test"))
 		})
 	})
 
@@ -112,7 +111,7 @@ var _ = Describe("Tests for tsdb.go", func() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(dir)
+			Expect(os.RemoveAll(dir)).To(Succeed())
 		})
 
 		It("decomposes measurement documents into per-field samples", func() {
@@ -172,14 +171,13 @@ var _ = Describe("Tests for tsdb.go", func() {
 					"name":       "something",
 				},
 			}
-			resp, err := indexer.Index(docs, IndexingOpts{MetricName: "test"})
-			Expect(err).To(BeNil())
-			Expect(resp).To(ContainSubstring("no valid samples"))
+			_, err := indexer.Index(docs, IndexingOpts{MetricName: "test"})
+			Expect(err).To(MatchError("TSDB indexer: no valid samples for test"))
 		})
 	})
 
 	Context("extractSamples()", func() {
-		It("uses opts.MetricName as __name__ label for prom-style docs", func() {
+		It("uses opts.MetricName as __name__ label for prom-style docs with labels", func() {
 			now := time.Now().UTC()
 			doc := map[string]interface{}{
 				"timestamp": now.Format(time.RFC3339Nano),
@@ -189,6 +187,22 @@ var _ = Describe("Tests for tsdb.go", func() {
 			samples := extractSamples(doc, IndexingOpts{MetricName: "myMetric"})
 			Expect(samples).To(HaveLen(1))
 			Expect(samples[0].labels.Get("__name__")).To(Equal("myMetric"))
+		})
+
+		It("handles prom-style docs with value but no labels", func() {
+			now := time.Now().UTC()
+			doc := map[string]interface{}{
+				"timestamp": now.Format(time.RFC3339Nano),
+				"value":     42.5,
+				"uuid":      "test-uuid",
+				"jobName":   "test-job",
+			}
+			samples := extractSamples(doc, IndexingOpts{MetricName: "simpleMetric"})
+			Expect(samples).To(HaveLen(1))
+			Expect(samples[0].labels.Get("__name__")).To(Equal("simpleMetric"))
+			Expect(samples[0].value).To(Equal(42.5))
+			Expect(samples[0].labels.Get("uuid")).To(Equal("test-uuid"))
+			Expect(samples[0].labels.Get("job_name")).To(Equal("test-job"))
 		})
 
 		It("sets field label for measurement-style docs", func() {
@@ -229,7 +243,7 @@ var _ = Describe("Tests for tsdb.go", func() {
 	Context("Factory integration", func() {
 		It("NewIndexer creates TSDB indexer", func() {
 			dir := filepath.Join(os.TempDir(), "tsdb-test-factory")
-			defer os.RemoveAll(dir)
+			defer func() { Expect(os.RemoveAll(dir)).To(Succeed()) }()
 			indexer, err := NewIndexer(IndexerConfig{
 				Type:             TSDBIndexer,
 				MetricsDirectory: dir,

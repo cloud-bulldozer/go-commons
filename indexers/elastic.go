@@ -93,7 +93,7 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 		Timeout:    10 * time.Minute, // TODO: hardcoded
 	})
 	if err != nil {
-		return "", fmt.Errorf("Error creating the indexer: %s", err)
+		return "", fmt.Errorf("error creating the indexer: %s", err)
 	}
 	start := time.Now().UTC()
 	docHash := make(map[string]bool)
@@ -101,7 +101,7 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 	for _, document := range documents {
 		j, err := json.Marshal(document)
 		if err != nil {
-			return "", fmt.Errorf("Cannot encode document %v: %s", document, err)
+			return "", fmt.Errorf("cannot encode document %v: %s", document, err)
 		}
 
 		hasher.Write(j)
@@ -130,14 +130,14 @@ func (esIndexer *Elastic) Index(documents []interface{}, opts IndexingOpts) (str
 		)
 		if err != nil {
 			log.Infof("Error adding document with ID %s: %s", docId, err)
-			return "", fmt.Errorf("Unexpected ES indexing error: %s", err)
+			return "", fmt.Errorf("unexpected ES indexing error: %s", err)
 		}
 
 		docHash[docId] = true
 		hasher.Reset()
 	}
 	if err := bi.Close(context.Background()); err != nil {
-		return "", fmt.Errorf("Unexpected ES error: %s", err)
+		return "", fmt.Errorf("unexpected ES error: %s", err)
 	}
 	dur := time.Since(start)
 	for stat, val := range indexerStats {

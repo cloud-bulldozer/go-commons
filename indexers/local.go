@@ -40,7 +40,7 @@ func NewLocalIndexer(indexerConfig IndexerConfig) (*Local, error) {
 // Index uses generates a local file with the given name and metrics
 func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error) {
 	if len(documents) == 0 {
-		return "", fmt.Errorf("Empty document list in %v", opts.MetricName)
+		return "", fmt.Errorf("empty document list in %v", opts.MetricName)
 	}
 	if opts.MetricName == "" {
 		return "", fmt.Errorf("MetricName shouldn't be empty")
@@ -60,7 +60,7 @@ func (l *Local) Index(documents []interface{}, opts IndexingOpts) (string, error
 		return "", fmt.Errorf("JSON encoding error: %s", err)
 	}
 	if err := os.WriteFile(filename, content, 0644); err != nil {
-		return "", fmt.Errorf("Error writing metrics file %s: %s", filename, err)
+		return "", fmt.Errorf("error writing metrics file %s: %s", filename, err)
 	}
 	return fmt.Sprintf("File %s now contains %d documents", filename, len(documents)), nil
 }
