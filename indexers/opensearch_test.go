@@ -44,10 +44,13 @@ var _ = Describe("Tests for opensearch.go", func() {
 		})
 
 		It("when no url is passed", func() {
+			// Create a server and immediately close it to get a guaranteed refused port
+			closedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+			closedURL := closedServer.URL
+			closedServer.Close()
+			testcase.indexerConfig.Servers = []string{closedURL}
 			_, err := NewOpenSearchIndexer(testcase.indexerConfig)
-			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusGatewayTimeout)
-			}))
+			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("connect: connection refused"))
 		})
 

@@ -45,11 +45,13 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("when no url is passed", func() {
+			// Create a server and immediately close it to get a guaranteed refused port
+			closedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+			closedURL := closedServer.URL
+			closedServer.Close()
+			testcase.indexerConfig.Servers = []string{closedURL}
 			_, err := NewElasticIndexer(testcase.indexerConfig)
-			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusGatewayTimeout)
-			}))
-			//using .Error() to convert to string as the error which is generated contains port and is dynamic
+			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("connect: connection refused"))
 		})
 

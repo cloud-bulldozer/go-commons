@@ -29,6 +29,8 @@ func NewIndexer(indexerConfig IndexerConfig) (*Indexer, error) {
 		indexer, err = NewElasticIndexer(indexerConfig)
 	case OpenSearchIndexer:
 		indexer, err = NewOpenSearchIndexer(indexerConfig)
+	case TSDBIndexer:
+		indexer, err = NewTSDBIndexer(indexerConfig)
 	default:
 		return &indexer, fmt.Errorf("Indexer not found: %s", indexerConfig.Type)
 	}

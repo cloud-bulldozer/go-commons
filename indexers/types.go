@@ -22,6 +22,8 @@ const (
 	OpenSearchIndexer IndexerType = "opensearch"
 	// Local indexer that writes metrics to local directory
 	LocalIndexer IndexerType = "local"
+	// TSDB indexer that writes Prometheus TSDB blocks to local directory
+	TSDBIndexer IndexerType = "tsdb"
 )
 
 // Indexer interface
