@@ -46,6 +46,7 @@ var _ = Describe("Tests for local.go", func() {
 		var indexer Local
 		indexer.metricsDirectory = "placeholder"
 		BeforeEach(func() {
+			indexer.metricsDirectory = "placeholder"
 			err := os.MkdirAll(indexer.metricsDirectory, 0744)
 			if err != nil {
 				log.Fatal(err)
@@ -96,7 +97,7 @@ var _ = Describe("Tests for local.go", func() {
 		It("Err is returned metricsdirectory has fault", func() {
 			indexer.metricsDirectory = "abc"
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).To(MatchError(errors.New("Error writing metrics file abc/placeholder.json: open abc/placeholder.json: no such file or directory")))
+			Expect(err).To(MatchError(errors.New("error writing metrics file abc/placeholder.json: open abc/placeholder.json: no such file or directory")))
 		})
 
 		It("Err is returned by documents not processed", func() {
@@ -106,7 +107,7 @@ var _ = Describe("Tests for local.go", func() {
 		})
 		It("returns err no empty document list", func() {
 			_, err := indexer.Index(emtpyTestCase.documents, emtpyTestCase.opts)
-			Expect(err).To(MatchError(fmt.Errorf("Empty document list in %v", emtpyTestCase.opts.MetricName)))
+			Expect(err).To(MatchError(fmt.Errorf("empty document list in %v", emtpyTestCase.opts.MetricName)))
 		})
 
 		It("returns err when MetricName is empty", func() {
@@ -142,7 +143,7 @@ var _ = Describe("Tests for local.go", func() {
 			Expect(err).To(BeNil())
 
 			_, err = indexer.Index(testcase.documents, testcase.opts)
-			Expect(err).To(MatchError(errors.New("JSON decoding error in abc/placeholder.json: invalid character 'o' in literal null (expecting 'u')")))
+			Expect(err).To(MatchError(errors.New("JSON decoding error in placeholder/placeholder.json: invalid character 'o' in literal null (expecting 'u')")))
 		})
 	})
 })

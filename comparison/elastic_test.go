@@ -20,11 +20,11 @@ var c int
 
 var searchFunc = func(o ...func(*esapi.SearchRequest)) (*esapi.Response, error) {
 	c = c + 1
-	var res *esapi.Response = &esapi.Response{}
+	var res = &esapi.Response{}
 	res.StatusCode = 200
 	body := io.NopCloser(bytes.NewReader([]byte(`{"took":170,"timed_out":false,"_shards":{"total":443,"successful":443,"skipped":0,"failed":0},"hits":{"total":{"value":0,"relation":"eq"},"max_score":null,"hits":[]},"aggregations":{"stats":{"count":0,"min":null,"max":null,"avg":null,"sum":0.0}}}`)))
 	res.Body = body
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	return res, nil
 }
 
@@ -67,11 +67,11 @@ var _ = Describe("Tests for elastic.go", func() {
 		It("Test1 error 404", func() {
 			client.Search = func(o ...func(*esapi.SearchRequest)) (*esapi.Response, error) {
 				c = c + 1
-				var res *esapi.Response = &esapi.Response{}
+				var res = &esapi.Response{}
 				res.StatusCode = 404
 				body := io.NopCloser(bytes.NewReader([]byte(`{"error":{"root_cause":[{"type":"index_not_found_exception","reason":"no such index [placeholder]","index":"placeholder","resource.id":"placeholder","resource.type":"index_or_alias","index_uuid":"_na_"}],"type":"index_not_found_exception","reason":"no such index [placeholder]","index":"placeholder","resource.id":"placeholder","resource.type":"index_or_alias","index_uuid":"_na_"},"status":404}`)))
 				res.Body = body
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				return res, nil
 			}
 			comparator = NewComparator(client, "placeholder")
@@ -103,11 +103,11 @@ var _ = Describe("Tests for elastic.go", func() {
 			var c int
 			client.Search = func(o ...func(*esapi.SearchRequest)) (*esapi.Response, error) {
 				c = c + 1
-				var res *esapi.Response = &esapi.Response{}
+				var res = &esapi.Response{}
 				res.StatusCode = 200
 				body := io.NopCloser(bytes.NewReader([]byte(`hi this a non parsable`)))
 				res.Body = body
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				return res, nil
 			}
 			comparator = NewComparator(client, "_all")
@@ -120,11 +120,11 @@ var _ = Describe("Tests for elastic.go", func() {
 		It("Test5 non parsable json", func() {
 			client.Search = func(o ...func(*esapi.SearchRequest)) (*esapi.Response, error) {
 				c = c + 1
-				var res *esapi.Response = &esapi.Response{}
+				var res = &esapi.Response{}
 				res.StatusCode = 404
 				body := io.NopCloser(bytes.NewReader([]byte(`hi non parse`)))
 				res.Body = body
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				return res, nil
 			}
 			comparator = NewComparator(client, "placeholder")

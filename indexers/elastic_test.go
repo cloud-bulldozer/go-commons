@@ -45,18 +45,20 @@ var _ = Describe("Tests for elastic.go", func() {
 		})
 
 		It("when no url is passed", func() {
+			// Create a server and immediately close it to get a guaranteed refused port
+			closedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+			closedURL := closedServer.URL
+			closedServer.Close()
+			testcase.indexerConfig.Servers = []string{closedURL}
 			_, err := NewElasticIndexer(testcase.indexerConfig)
-			testcase.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusGatewayTimeout)
-			}))
-			//using .Error() to convert to string as the error which is generated contains port and is dynamic
+			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("connect: connection refused"))
 		})
 
 		It("Returns err not passing a valid URL in env variable", func() {
 			testcase.indexerConfig.Servers = []string{}
-			os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")
-			defer os.Unsetenv("ELASTICSEARCH_URL")
+			Expect(os.Setenv("ELASTICSEARCH_URL", "not a valid url:port")).To(Succeed())
+			defer func() { Expect(os.Unsetenv("ELASTICSEARCH_URL")).To(Succeed()) }()
 			defer testcase.mockServer.Close()
 			_, err := NewElasticIndexer(testcase.indexerConfig)
 			Expect(err).To(BeEquivalentTo(errors.New("error creating the ES client: cannot create client: cannot parse url: parse \"not a valid url:port\": first path segment in URL cannot contain colon")))
@@ -120,7 +122,7 @@ var _ = Describe("Tests for elastic.go", func() {
 		It("err returned docs not processed", func() {
 			testcase.documents = append(testcase.documents, make(chan string))
 			_, err := indexer.Index(testcase.documents, testcase.opts)
-			Expect(err.Error()).To(ContainSubstring("Cannot encode document"))
+			Expect(err.Error()).To(ContainSubstring("cannot encode document"))
 		})
 
 	})

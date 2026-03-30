@@ -64,7 +64,7 @@ var _ = Describe("Tests for K8S Volume Snapshot", func() {
 		}
 
 		getAndRegisterClientSet = func() *fake.Clientset {
-			clientSet := fake.NewSimpleClientset(
+			clientSet := fake.NewClientset(
 				&storagev1.StorageClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: expectedStorageClassName,

@@ -38,7 +38,7 @@ var _ = Describe("ssh.go verify key creation", func() {
 
 		It("create with path", func ()  {
 			keyPairPath := "/tmp/cloud-bulldozer-unittest"
-			os.RemoveAll(keyPairPath)
+			Expect(os.RemoveAll(keyPairPath)).To(Succeed())
 			err := os.Mkdir(keyPairPath, 0755)
 			Expect(err).To(BeNil())
 			private, public, err := GenerateSSHKeyPair(keyPairPath, "", "")
