@@ -142,6 +142,28 @@ func (meta *Metadata) GetCurrentPodCount(nodeLabelSelector string) (int, error) 
 	return podCount, nil
 }
 
+// GetAggregatedNodeCapacity returns the aggregated allocatable resources of nodes matching the given label selector
+func (meta *Metadata) GetAggNodeResources(nodeLabelSelector string) (NodeResources, error) {
+	var nodeResources NodeResources
+	nodeList, err := meta.connector.ClientSet().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: nodeLabelSelector})
+	if err != nil {
+		return nodeResources, err
+	}
+	nodeResources.NodeCount = len(nodeList.Items)
+	for _, node := range nodeList.Items {
+		if cpuQuantity, ok := node.Status.Allocatable["cpu"]; ok {
+			nodeResources.CPUMilliCores += cpuQuantity.MilliValue() / 1000
+		}
+		if memoryQuantity, ok := node.Status.Allocatable["memory"]; ok {
+			nodeResources.MemoryBytes += memoryQuantity.Value()
+		}
+		if podQuantity, ok := node.Status.Allocatable["pods"]; ok {
+			nodeResources.PodCapacity += podQuantity.Value()
+		}
+	}
+	return nodeResources, nil
+}
+
 // Returns the number of current running VMIs in the cluster
 func (meta *Metadata) GetCurrentVMICount() (int, error) {
 	var vmiCount int

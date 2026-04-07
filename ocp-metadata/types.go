@@ -88,6 +88,14 @@ type clusterVersion struct {
 	} `json:"status"`
 }
 
+// Type to store aggregated node capacity
+type NodeResources struct {
+	CPUMilliCores int64
+	MemoryBytes   int64
+	PodCapacity   int64
+	NodeCount     int
+}
+
 // Type to store cluster metadata
 type ClusterMetadata struct {
 	MetricName       string `json:"metricName,omitempty"`
