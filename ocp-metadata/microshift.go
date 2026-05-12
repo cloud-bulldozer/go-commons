@@ -27,9 +27,18 @@ import (
 const (
 	microShiftVersionNamespace = "kube-public"
 	microShiftVersionConfigMap = "microshift-version"
+)
 
-	apiGroupOpenShiftConfig = "config.openshift.io"
-	apiGroupOpenShiftRoute  = "route.openshift.io"
+// Well-known OpenShift API groups exposed for downstream capability checks.
+const (
+	// APIGroupOpenShiftConfig identifies the OpenShift config API group.
+	APIGroupOpenShiftConfig = "config.openshift.io"
+	// APIGroupOpenShiftRoute identifies the OpenShift route API group.
+	APIGroupOpenShiftRoute = "route.openshift.io"
+	// APIGroupOpenShiftBuild identifies the OpenShift build API group.
+	APIGroupOpenShiftBuild = "build.openshift.io"
+	// APIGroupOpenShiftSecurity identifies the OpenShift security API group.
+	APIGroupOpenShiftSecurity = "security.openshift.io"
 
 	// DistributionKubernetes identifies a vanilla Kubernetes cluster.
 	DistributionKubernetes = "kubernetes"
@@ -48,32 +57,57 @@ var microShiftMajorMinorRe = regexp.MustCompile(`^[0-9]+\.[0-9]+`)
 
 func (meta *Metadata) detectDistribution() (string, microShiftVersionInfo, error) {
 	cm, err := meta.readMicroShiftVersionConfigMap()
+	if distribution, info, detected := detectDistributionFromMicroShiftConfigMap(cm, err); detected {
+		return distribution, info, nil
+	}
+
+	apiGroups, err := meta.discoverAPIGroups()
+	if err != nil {
+		return DistributionKubernetes, microShiftVersionInfo{}, err
+	}
+
+	return detectDistributionFromAPIGroups(apiGroups), microShiftVersionInfo{}, nil
+}
+
+func detectDistributionFromMicroShiftConfigMap(cm *corev1.ConfigMap, err error) (string, microShiftVersionInfo, bool) {
 	switch {
 	case err == nil:
+		// ConfigMap presence is authoritative for MicroShift even if version
+		// fields are missing or malformed.
 		info, _ := parseMicroShiftVersion(cm)
-		return DistributionMicroShift, info, nil
+		return DistributionMicroShift, info, true
 	case apierrors.IsNotFound(err):
 		// Expected on OpenShift and vanilla Kubernetes.
 	default:
 		// Keep metadata collection best-effort when kube-public is unreadable.
 	}
+	return "", microShiftVersionInfo{}, false
+}
 
+func (meta *Metadata) discoverAPIGroups() (map[string]bool, error) {
 	groups, err := meta.connector.ClientSet().Discovery().ServerGroups()
 	if err != nil {
-		return DistributionKubernetes, microShiftVersionInfo{}, err
+		return nil, fmt.Errorf("discover API groups: %w", err)
 	}
-	apiGroups := make(map[string]bool, len(groups.Groups))
+	apiGroups := map[string]bool{}
+	if groups == nil {
+		// Defend against custom discovery clients returning nil with nil error.
+		return apiGroups, nil
+	}
 	for _, group := range groups.Groups {
 		apiGroups[group.Name] = true
 	}
+	return apiGroups, nil
+}
 
-	if apiGroups[apiGroupOpenShiftConfig] {
-		return DistributionOpenShift, microShiftVersionInfo{}, nil
+func detectDistributionFromAPIGroups(apiGroups map[string]bool) string {
+	if apiGroups[APIGroupOpenShiftConfig] {
+		return DistributionOpenShift
 	}
-	if apiGroups[apiGroupOpenShiftRoute] {
-		return DistributionMicroShift, microShiftVersionInfo{}, nil
+	if apiGroups[APIGroupOpenShiftRoute] {
+		return DistributionMicroShift
 	}
-	return DistributionKubernetes, microShiftVersionInfo{}, nil
+	return DistributionKubernetes
 }
 
 func (meta *Metadata) readMicroShiftVersionConfigMap() (*corev1.ConfigMap, error) {

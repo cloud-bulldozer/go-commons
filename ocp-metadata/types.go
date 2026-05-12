@@ -87,6 +87,29 @@ type clusterVersion struct {
 	} `json:"status"`
 }
 
+// ClusterCapabilities stores runtime cluster capabilities used for branching.
+type ClusterCapabilities struct {
+	APIGroups map[string]bool `json:"-"`
+}
+
+// HasAPIGroup returns whether the cluster advertises the given API group.
+func (c ClusterCapabilities) HasAPIGroup(group string) bool {
+	return c.APIGroups[group]
+}
+
+// ClusterInfo contains cluster metadata and runtime capabilities.
+// It is intended for in-process use: JSON output keeps metadata under the
+// metadata key and omits runtime capabilities.
+type ClusterInfo struct {
+	Metadata     ClusterMetadata     `json:"metadata"`
+	Capabilities ClusterCapabilities `json:"-"`
+}
+
+// HasAPIGroup returns whether the cluster advertises the given API group.
+func (i ClusterInfo) HasAPIGroup(group string) bool {
+	return i.Capabilities.HasAPIGroup(group)
+}
+
 // Type to store cluster metadata
 type ClusterMetadata struct {
 	MetricName             string `json:"metricName,omitempty"`
