@@ -47,15 +47,6 @@ type microShiftVersionInfo struct {
 var microShiftMajorMinorRe = regexp.MustCompile(`^[0-9]+\.[0-9]+`)
 
 func (meta *Metadata) detectDistribution() (string, microShiftVersionInfo, error) {
-	groups, err := meta.connector.ClientSet().Discovery().ServerGroups()
-	if err != nil {
-		return DistributionKubernetes, microShiftVersionInfo{}, err
-	}
-	apiGroups := make(map[string]bool, len(groups.Groups))
-	for _, group := range groups.Groups {
-		apiGroups[group.Name] = true
-	}
-
 	cm, err := meta.readMicroShiftVersionConfigMap()
 	switch {
 	case err == nil:
@@ -65,6 +56,15 @@ func (meta *Metadata) detectDistribution() (string, microShiftVersionInfo, error
 		// Expected on OpenShift and vanilla Kubernetes.
 	default:
 		// Keep metadata collection best-effort when kube-public is unreadable.
+	}
+
+	groups, err := meta.connector.ClientSet().Discovery().ServerGroups()
+	if err != nil {
+		return DistributionKubernetes, microShiftVersionInfo{}, err
+	}
+	apiGroups := make(map[string]bool, len(groups.Groups))
+	for _, group := range groups.Groups {
+		apiGroups[group.Name] = true
 	}
 
 	if apiGroups[apiGroupOpenShiftConfig] {

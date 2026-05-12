@@ -15,6 +15,7 @@
 package ocpmetadata
 
 import (
+	"errors"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 type fakeConnector struct {
@@ -52,9 +54,11 @@ func TestDetectDistribution(t *testing.T) {
 		name             string
 		apiGroups        []string
 		configMapData    map[string]string
+		discoveryError   bool
 		wantDistribution string
 		wantVersion      string
 		wantMajorMinor   string
+		wantErr          bool
 	}{
 		{
 			name:      "microshift configmap with version fields",
@@ -101,6 +105,19 @@ func TestDetectDistribution(t *testing.T) {
 			wantMajorMinor:   "4.22",
 		},
 		{
+			name:             "microshift configmap works when discovery fails",
+			configMapData:    map[string]string{"version": "4.22.0~rc.2", "major": "4", "minor": "22"},
+			discoveryError:   true,
+			wantDistribution: DistributionMicroShift,
+			wantVersion:      "4.22.0~rc.2",
+			wantMajorMinor:   "4.22",
+		},
+		{
+			name:           "discovery error without microshift configmap returns error",
+			discoveryError: true,
+			wantErr:        true,
+		},
+		{
 			name:             "kubernetes",
 			wantDistribution: DistributionKubernetes,
 		},
@@ -109,7 +126,16 @@ func TestDetectDistribution(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			meta := newTestMetadata(t, tt.apiGroups, tt.configMapData)
+			if tt.discoveryError {
+				injectDiscoveryError(t, meta)
+			}
 			gotDistribution, gotVersion, err := meta.detectDistribution()
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("detectDistribution returned nil error, want error")
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("detectDistribution returned unexpected error: %v", err)
 			}
@@ -124,6 +150,18 @@ func TestDetectDistribution(t *testing.T) {
 			}
 		})
 	}
+}
+
+func injectDiscoveryError(t *testing.T, meta Metadata) {
+	t.Helper()
+
+	clientSet, ok := meta.connector.ClientSet().(*k8sfake.Clientset)
+	if !ok {
+		t.Fatal("unexpected clientset type")
+	}
+	clientSet.PrependReactor("get", "group", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("discovery failed")
+	})
 }
 
 func TestGetClusterMetadataMicroShift(t *testing.T) {
