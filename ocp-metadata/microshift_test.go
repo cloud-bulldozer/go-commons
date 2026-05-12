@@ -194,6 +194,7 @@ func TestGetClusterMetadataMicroShift(t *testing.T) {
 	if clusterMetadata.TotalNodes != 1 {
 		t.Fatalf("TotalNodes = %d, want %d", clusterMetadata.TotalNodes, 1)
 	}
+	assertEmptyOpenShiftMetadata(t, clusterMetadata)
 }
 
 func TestGetClusterMetadataOpenShift(t *testing.T) {
@@ -209,6 +210,7 @@ func TestGetClusterMetadataOpenShift(t *testing.T) {
 	if clusterMetadata.MicroShift {
 		t.Fatal("MicroShift = true, want false")
 	}
+	assertEmptyMicroShiftMetadata(t, clusterMetadata)
 	if clusterMetadata.OCPVersion != "4.18.9" {
 		t.Fatalf("OCPVersion = %q, want %q", clusterMetadata.OCPVersion, "4.18.9")
 	}
@@ -259,6 +261,61 @@ func TestGetClusterMetadataOpenShift(t *testing.T) {
 	}
 	if clusterMetadata.WorkerNodesCount != 1 {
 		t.Fatalf("WorkerNodesCount = %d, want %d", clusterMetadata.WorkerNodesCount, 1)
+	}
+}
+
+func assertEmptyOpenShiftMetadata(t *testing.T, clusterMetadata ClusterMetadata) {
+	t.Helper()
+
+	if clusterMetadata.OCPVersion != "" {
+		t.Fatalf("OCPVersion = %q, want empty", clusterMetadata.OCPVersion)
+	}
+	if clusterMetadata.OCPMajorVersion != "" {
+		t.Fatalf("OCPMajorVersion = %q, want empty", clusterMetadata.OCPMajorVersion)
+	}
+	if clusterMetadata.Platform != "" {
+		t.Fatalf("Platform = %q, want empty", clusterMetadata.Platform)
+	}
+	if clusterMetadata.ClusterType != "" {
+		t.Fatalf("ClusterType = %q, want empty", clusterMetadata.ClusterType)
+	}
+	if clusterMetadata.Region != "" {
+		t.Fatalf("Region = %q, want empty", clusterMetadata.Region)
+	}
+	if clusterMetadata.ClusterName != "" {
+		t.Fatalf("ClusterName = %q, want empty", clusterMetadata.ClusterName)
+	}
+	if clusterMetadata.SDNType != "" {
+		t.Fatalf("SDNType = %q, want empty", clusterMetadata.SDNType)
+	}
+	if clusterMetadata.Fips {
+		t.Fatal("Fips = true, want false")
+	}
+	if clusterMetadata.Publish != "" {
+		t.Fatalf("Publish = %q, want empty", clusterMetadata.Publish)
+	}
+	if clusterMetadata.WorkerArch != "" {
+		t.Fatalf("WorkerArch = %q, want empty", clusterMetadata.WorkerArch)
+	}
+	if clusterMetadata.ControlPlaneArch != "" {
+		t.Fatalf("ControlPlaneArch = %q, want empty", clusterMetadata.ControlPlaneArch)
+	}
+	if clusterMetadata.Ipsec {
+		t.Fatal("Ipsec = true, want false")
+	}
+	if clusterMetadata.IpsecMode != "" {
+		t.Fatalf("IpsecMode = %q, want empty", clusterMetadata.IpsecMode)
+	}
+}
+
+func assertEmptyMicroShiftMetadata(t *testing.T, clusterMetadata ClusterMetadata) {
+	t.Helper()
+
+	if clusterMetadata.MicroShiftVersion != "" {
+		t.Fatalf("MicroShiftVersion = %q, want empty", clusterMetadata.MicroShiftVersion)
+	}
+	if clusterMetadata.MicroShiftMajorVersion != "" {
+		t.Fatalf("MicroShiftMajorVersion = %q, want empty", clusterMetadata.MicroShiftMajorVersion)
 	}
 }
 
