@@ -75,7 +75,6 @@ type infraObj struct {
 type versionObj struct {
 	ocpVersion      string
 	ocpMajorVersion string
-	k8sVersion      string
 }
 
 // Type to store cluster info
@@ -90,27 +89,31 @@ type clusterVersion struct {
 
 // Type to store cluster metadata
 type ClusterMetadata struct {
-	MetricName       string `json:"metricName,omitempty"`
-	Platform         string `json:"platform,omitempty"`
-	ClusterType      string `json:"clusterType,omitempty"`
-	OCPVersion       string `json:"ocpVersion,omitempty"`
-	OCPMajorVersion  string `json:"ocpMajorVersion,omitempty"`
-	K8SVersion       string `json:"k8sVersion,omitempty"`
-	MasterNodesType  string `json:"masterNodesType,omitempty"`
-	WorkerNodesType  string `json:"workerNodesType,omitempty"`
-	MasterNodesCount int    `json:"masterNodesCount,omitempty"`
-	InfraNodesType   string `json:"infraNodesType,omitempty"`
-	WorkerNodesCount int    `json:"workerNodesCount,omitempty"`
-	InfraNodesCount  int    `json:"infraNodesCount,omitempty"`
-	OtherNodesCount  int    `json:"otherNodesCount,omitempty"`
-	TotalNodes       int    `json:"totalNodes,omitempty"`
-	SDNType          string `json:"sdnType,omitempty"`
-	ClusterName      string `json:"clusterName,omitempty"`
-	Region           string `json:"region,omitempty"`
-	Fips             bool   `json:"fips,omitempty"`
-	Publish          string `json:"publish,omitempty"`
-	WorkerArch       string `json:"workerArch,omitempty"`
-	ControlPlaneArch string `json:"controlPlaneArch,omitempty"`
-	Ipsec            bool   `json:"ipsec,omitempty"`
-	IpsecMode        string `json:"ipsecMode,omitempty"`
+	MetricName             string `json:"metricName,omitempty"`
+	Distribution           string `json:"distribution,omitempty"`
+	MicroShift             bool   `json:"microshift,omitempty"`
+	MicroShiftVersion      string `json:"microshiftVersion,omitempty"`
+	MicroShiftMajorVersion string `json:"microshiftMajorVersion,omitempty"`
+	Platform               string `json:"platform,omitempty"`
+	ClusterType            string `json:"clusterType,omitempty"`
+	OCPVersion             string `json:"ocpVersion,omitempty"`
+	OCPMajorVersion        string `json:"ocpMajorVersion,omitempty"`
+	K8SVersion             string `json:"k8sVersion,omitempty"`
+	MasterNodesType        string `json:"masterNodesType,omitempty"`
+	WorkerNodesType        string `json:"workerNodesType,omitempty"`
+	MasterNodesCount       int    `json:"masterNodesCount,omitempty"`
+	InfraNodesType         string `json:"infraNodesType,omitempty"`
+	WorkerNodesCount       int    `json:"workerNodesCount,omitempty"`
+	InfraNodesCount        int    `json:"infraNodesCount,omitempty"`
+	OtherNodesCount        int    `json:"otherNodesCount,omitempty"`
+	TotalNodes             int    `json:"totalNodes,omitempty"`
+	SDNType                string `json:"sdnType,omitempty"`
+	ClusterName            string `json:"clusterName,omitempty"`
+	Region                 string `json:"region,omitempty"`
+	Fips                   bool   `json:"fips,omitempty"`
+	Publish                string `json:"publish,omitempty"`
+	WorkerArch             string `json:"workerArch,omitempty"`
+	ControlPlaneArch       string `json:"controlPlaneArch,omitempty"`
+	Ipsec                  bool   `json:"ipsec,omitempty"`
+	IpsecMode              string `json:"ipsecMode,omitempty"`
 }

@@ -54,59 +54,86 @@ func NewMetadata(restConfig *rest.Config) (Metadata, error) {
 // GetClusterMetadata returns a clusterMetadata object from the given OCP cluster
 func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
 	metadata := ClusterMetadata{}
+	distribution, microShiftVersion, err := meta.detectDistribution()
+	if err != nil {
+		return metadata, err
+	}
+	metadata.Distribution = distribution
+
+	metadata.K8SVersion, err = meta.getK8SVersion()
+	if err != nil {
+		return metadata, err
+	}
+	if err := meta.getNodesInfo(&metadata); err != nil {
+		return metadata, err
+	}
+
+	switch distribution {
+	case DistributionMicroShift:
+		metadata.MicroShift = true
+		metadata.MicroShiftVersion = microShiftVersion.version
+		metadata.MicroShiftMajorVersion = microShiftVersion.majorMinor
+	case DistributionOpenShift:
+		if err := meta.populateOpenShiftMetadata(&metadata); err != nil {
+			return metadata, err
+		}
+	}
+	return metadata, nil
+}
+
+func (meta *Metadata) populateOpenShiftMetadata(metadata *ClusterMetadata) error {
+	version, err := meta.getOCPVersionInfo()
+	if err != nil {
+		return err
+	}
+	metadata.OCPVersion, metadata.OCPMajorVersion = version.ocpVersion, version.ocpMajorVersion
+
 	infra, err := meta.getInfraDetails()
 	if err != nil {
-		return metadata, nil
+		return err
 	}
-	version, err := meta.getVersionInfo()
+	if infra == nil {
+		return nil
+	}
+	metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
+	metadata.ClusterType = "self-managed"
+	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
+		if v.Key == "red-hat-clustertype" {
+			metadata.ClusterType = v.Value
+		}
+	}
+	metadata.SDNType, err = meta.getSDNInfo()
 	if err != nil {
-		return metadata, err
+		return err
 	}
-	metadata.OCPVersion, metadata.OCPMajorVersion, metadata.K8SVersion = version.ocpVersion, version.ocpMajorVersion, version.k8sVersion
-	if meta.getNodesInfo(&metadata) != nil {
-		return metadata, err
-	}
-	if infra != nil {
-		metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
-		metadata.ClusterType = "self-managed"
-		for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
-			if v.Key == "red-hat-clustertype" {
-				metadata.ClusterType = v.Value
-			}
-		}
-		metadata.SDNType, err = meta.getSDNInfo()
-		if err != nil {
-			return metadata, err
-		}
 
-		// Get InstallConfig to use in multiple methods
-		installConfig, err := meta.getClusterConfig()
-		if err != nil {
-			return metadata, err
-		}
-
-		metadata.Fips, err = meta.getFips(installConfig)
-		if err != nil {
-			return metadata, err
-		}
-		metadata.Publish, err = meta.getPublish(installConfig)
-		if err != nil {
-			return metadata, err
-		}
-		metadata.WorkerArch, err = meta.getComputeWorkerArch(installConfig)
-		if err != nil {
-			return metadata, err
-		}
-		metadata.ControlPlaneArch, err = meta.getControlPlaneArch(installConfig)
-		if err != nil {
-			return metadata, err
-		}
-		metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
-		if err != nil {
-			return metadata, err
-		}
+	// Get InstallConfig to use in multiple methods
+	installConfig, err := meta.getClusterConfig()
+	if err != nil {
+		return err
 	}
-	return metadata, err
+
+	metadata.Fips, err = meta.getFips(installConfig)
+	if err != nil {
+		return err
+	}
+	metadata.Publish, err = meta.getPublish(installConfig)
+	if err != nil {
+		return err
+	}
+	metadata.WorkerArch, err = meta.getComputeWorkerArch(installConfig)
+	if err != nil {
+		return err
+	}
+	metadata.ControlPlaneArch, err = meta.getControlPlaneArch(installConfig)
+	if err != nil {
+		return err
+	}
+	metadata.Ipsec, metadata.IpsecMode, err = meta.getIPSec()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetPrometheus Returns Prometheus URL and a valid Bearer token
@@ -225,15 +252,18 @@ func (meta *Metadata) getInfraDetails() (*infraObj, error) {
 	return &infraJSON, err
 }
 
-// getVersionInfo obtains OCP and k8s version information
-func (meta *Metadata) getVersionInfo() (versionObj, error) {
-	var cv clusterVersion
-	var versionInfo versionObj
+func (meta *Metadata) getK8SVersion() (string, error) {
 	version, err := meta.connector.ClientSet().Discovery().ServerVersion()
 	if err != nil {
-		return versionInfo, err
+		return "", err
 	}
-	versionInfo.k8sVersion = version.GitVersion
+	return version.GitVersion, nil
+}
+
+// getOCPVersionInfo obtains OCP version information
+func (meta *Metadata) getOCPVersionInfo() (versionObj, error) {
+	var cv clusterVersion
+	var versionInfo versionObj
 	clusterVersion, err := meta.connector.DynamicClient().Resource(
 		schema.GroupVersionResource{
 			Group:    "config.openshift.io",
