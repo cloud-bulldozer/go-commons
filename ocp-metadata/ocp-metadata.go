@@ -53,17 +53,52 @@ func NewMetadata(restConfig *rest.Config) (Metadata, error) {
 
 // GetClusterMetadata returns a clusterMetadata object from the given OCP cluster
 func (meta *Metadata) GetClusterMetadata() (ClusterMetadata, error) {
-	metadata := ClusterMetadata{}
 	distribution, microShiftVersion, err := meta.detectDistribution()
 	if err != nil {
-		return metadata, err
+		return ClusterMetadata{}, err
 	}
+	return meta.getClusterMetadata(distribution, microShiftVersion)
+}
+
+// GetClusterInfo returns cluster metadata and runtime capabilities.
+// It always discovers API groups so Capabilities reflects the cluster even when
+// the MicroShift ConfigMap is present and authoritative for distribution.
+// If later metadata enrichment fails, the returned ClusterInfo contains the
+// capabilities and any metadata collected before the failure.
+func (meta *Metadata) GetClusterInfo() (ClusterInfo, error) {
+	cm, cmErr := meta.readMicroShiftVersionConfigMap()
+
+	apiGroups, err := meta.discoverAPIGroups()
+	if err != nil {
+		return ClusterInfo{}, err
+	}
+
+	distribution := detectDistributionFromAPIGroups(apiGroups)
+	microShiftVersion := microShiftVersionInfo{}
+	if cmDistribution, info, detected := detectDistributionFromMicroShiftConfigMap(cm, cmErr); detected {
+		distribution = cmDistribution
+		microShiftVersion = info
+	}
+
+	metadata, err := meta.getClusterMetadata(distribution, microShiftVersion)
+	info := ClusterInfo{
+		Metadata: metadata,
+		Capabilities: ClusterCapabilities{
+			APIGroups: apiGroups,
+		},
+	}
+	return info, err
+}
+
+func (meta *Metadata) getClusterMetadata(distribution string, microShiftVersion microShiftVersionInfo) (ClusterMetadata, error) {
+	metadata := ClusterMetadata{}
 	metadata.Distribution = distribution
 
-	metadata.K8SVersion, err = meta.getK8SVersion()
+	k8sVersion, err := meta.getK8SVersion()
 	if err != nil {
 		return metadata, err
 	}
+	metadata.K8SVersion = k8sVersion
 	if err := meta.getNodesInfo(&metadata); err != nil {
 		return metadata, err
 	}
