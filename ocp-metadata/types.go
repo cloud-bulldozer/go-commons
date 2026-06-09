@@ -121,7 +121,7 @@ func (i ClusterInfo) HasAPIGroup(group string) bool {
 type ClusterMetadata struct {
 	MetricName             string `json:"metricName,omitempty"`
 	Distribution           string `json:"distribution,omitempty"`
-	MicroShift             bool   `json:"microshift,omitempty"`
+	MicroShift             bool   `json:"microshift"`
 	MicroShiftVersion      string `json:"microshiftVersion,omitempty"`
 	MicroShiftMajorVersion string `json:"microshiftMajorVersion,omitempty"`
 	Platform               string `json:"platform,omitempty"`
@@ -140,10 +140,10 @@ type ClusterMetadata struct {
 	SDNType                string `json:"sdnType,omitempty"`
 	ClusterName            string `json:"clusterName,omitempty"`
 	Region                 string `json:"region,omitempty"`
-	Fips                   bool   `json:"fips,omitempty"`
+	Fips                   bool   `json:"fips"`
 	Publish                string `json:"publish,omitempty"`
 	WorkerArch             string `json:"workerArch,omitempty"`
 	ControlPlaneArch       string `json:"controlPlaneArch,omitempty"`
-	Ipsec                  bool   `json:"ipsec,omitempty"`
+	Ipsec                  bool   `json:"ipsec"`
 	IpsecMode              string `json:"ipsecMode,omitempty"`
 }
