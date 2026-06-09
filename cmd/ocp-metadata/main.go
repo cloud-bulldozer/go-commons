@@ -101,8 +101,7 @@ func getRestConfig() (*rest.Config, error) {
 }
 
 // outputData formats and prints data based on the output format
-func outputData(data interface{}) error {
+func outputData(data any) error {
 	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
 }
