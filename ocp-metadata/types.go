@@ -55,10 +55,11 @@ var vmiGVR = schema.GroupVersionResource{
 // Using well known node labels like topology.kubernetes.io/region to get the cloud region
 type infraObj struct {
 	Status struct {
-		InfrastructureName string `json:"infrastructureName"`
-		Platform           string `json:"platform"`
-		Type               string `json:"type"`
-		PlatformStatus     struct {
+		InfrastructureName   string `json:"infrastructureName"`
+		Platform             string `json:"platform"`
+		Type                 string `json:"type"`
+		ControlPlaneTopology string `json:"controlPlaneTopology"`
+		PlatformStatus       struct {
 			Aws struct {
 				Region       string `json:"region"`
 				ResourceTags []struct {
@@ -66,7 +67,13 @@ type infraObj struct {
 					Value string `json:"value"`
 				} `json:"resourceTags"`
 			} `json:"aws"`
-			Type string `json:"type"`
+			Azure struct {
+				Region       string `json:"region"`
+				ResourceTags []struct {
+					Key   string `json:"key"`
+					Value string `json:"value"`
+				} `json:"resourceTags"`
+			} `json:"azure"`
 		} `json:"platformStatus"`
 	} `json:"status"`
 }

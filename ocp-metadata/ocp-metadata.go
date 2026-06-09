@@ -135,6 +135,17 @@ func (meta *Metadata) populateOpenShiftMetadata(metadata *ClusterMetadata) error
 	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
 		if v.Key == "red-hat-clustertype" {
 			metadata.ClusterType = v.Value
+			if metadata.ClusterType == "rosa" && infra.Status.ControlPlaneTopology == "External" {
+				metadata.ClusterType = "rosa-hcp"
+			}
+		}
+	}
+	for _, v := range infra.Status.PlatformStatus.Azure.ResourceTags {
+		if v.Key == "red-hat-clustertype" {
+			metadata.ClusterType = v.Value
+			if metadata.ClusterType == "aro" && infra.Status.ControlPlaneTopology == "External" {
+				metadata.ClusterType = "aro-hcp"
+			}
 		}
 	}
 	metadata.SDNType, err = meta.getSDNInfo()
