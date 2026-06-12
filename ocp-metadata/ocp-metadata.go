@@ -116,6 +116,17 @@ func (meta *Metadata) getClusterMetadata(distribution string, microShiftVersion 
 	return metadata, nil
 }
 
+func regionFromInfra(infra *infraObj) string {
+	switch infra.Status.Platform {
+	case "AWS":
+		return infra.Status.PlatformStatus.Aws.Region
+	case "Azure":
+		return infra.Status.PlatformStatus.Azure.Region
+	default:
+		return ""
+	}
+}
+
 func (meta *Metadata) populateOpenShiftMetadata(metadata *ClusterMetadata) error {
 	version, err := meta.getOCPVersionInfo()
 	if err != nil {
@@ -130,11 +141,24 @@ func (meta *Metadata) populateOpenShiftMetadata(metadata *ClusterMetadata) error
 	if infra == nil {
 		return nil
 	}
-	metadata.ClusterName, metadata.Platform, metadata.Region = infra.Status.InfrastructureName, infra.Status.Platform, infra.Status.PlatformStatus.Aws.Region
+	metadata.ClusterName = infra.Status.InfrastructureName
+	metadata.Platform = infra.Status.Platform
+	metadata.Region = regionFromInfra(infra)
 	metadata.ClusterType = "self-managed"
 	for _, v := range infra.Status.PlatformStatus.Aws.ResourceTags {
 		if v.Key == "red-hat-clustertype" {
 			metadata.ClusterType = v.Value
+			if metadata.ClusterType == "rosa" && infra.Status.ControlPlaneTopology == "External" {
+				metadata.ClusterType = "rosa-hcp"
+			}
+		}
+	}
+	for _, v := range infra.Status.PlatformStatus.Azure.ResourceTags {
+		if v.Key == "red-hat-clustertype" {
+			metadata.ClusterType = v.Value
+			if metadata.ClusterType == "aro" && infra.Status.ControlPlaneTopology == "External" {
+				metadata.ClusterType = "aro-hcp"
+			}
 		}
 	}
 	metadata.SDNType, err = meta.getSDNInfo()

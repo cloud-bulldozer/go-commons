@@ -55,10 +55,11 @@ var vmiGVR = schema.GroupVersionResource{
 // Using well known node labels like topology.kubernetes.io/region to get the cloud region
 type infraObj struct {
 	Status struct {
-		InfrastructureName string `json:"infrastructureName"`
-		Platform           string `json:"platform"`
-		Type               string `json:"type"`
-		PlatformStatus     struct {
+		InfrastructureName   string `json:"infrastructureName"`
+		Platform             string `json:"platform"`
+		Type                 string `json:"type"`
+		ControlPlaneTopology string `json:"controlPlaneTopology"`
+		PlatformStatus       struct {
 			Aws struct {
 				Region       string `json:"region"`
 				ResourceTags []struct {
@@ -66,7 +67,13 @@ type infraObj struct {
 					Value string `json:"value"`
 				} `json:"resourceTags"`
 			} `json:"aws"`
-			Type string `json:"type"`
+			Azure struct {
+				Region       string `json:"region"`
+				ResourceTags []struct {
+					Key   string `json:"key"`
+					Value string `json:"value"`
+				} `json:"resourceTags"`
+			} `json:"azure"`
 		} `json:"platformStatus"`
 	} `json:"status"`
 }
@@ -114,7 +121,7 @@ func (i ClusterInfo) HasAPIGroup(group string) bool {
 type ClusterMetadata struct {
 	MetricName             string `json:"metricName,omitempty"`
 	Distribution           string `json:"distribution,omitempty"`
-	MicroShift             bool   `json:"microshift,omitempty"`
+	MicroShift             bool   `json:"microshift"`
 	MicroShiftVersion      string `json:"microshiftVersion,omitempty"`
 	MicroShiftMajorVersion string `json:"microshiftMajorVersion,omitempty"`
 	Platform               string `json:"platform,omitempty"`
@@ -133,10 +140,10 @@ type ClusterMetadata struct {
 	SDNType                string `json:"sdnType,omitempty"`
 	ClusterName            string `json:"clusterName,omitempty"`
 	Region                 string `json:"region,omitempty"`
-	Fips                   bool   `json:"fips,omitempty"`
+	Fips                   bool   `json:"fips"`
 	Publish                string `json:"publish,omitempty"`
 	WorkerArch             string `json:"workerArch,omitempty"`
 	ControlPlaneArch       string `json:"controlPlaneArch,omitempty"`
-	Ipsec                  bool   `json:"ipsec,omitempty"`
+	Ipsec                  bool   `json:"ipsec"`
 	IpsecMode              string `json:"ipsecMode,omitempty"`
 }
