@@ -91,18 +91,16 @@ func getRestConfig() (*rest.Config, error) {
 		}
 	}
 
-	// Try in-cluster config first
-	if config, err := rest.InClusterConfig(); err == nil {
-		return config, nil
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	// Fall back to in-cluster config
+	if err != nil {
+		config, err = rest.InClusterConfig()
 	}
-
-	// Fall back to kubeconfig file
-	return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	return config, err
 }
 
 // outputData formats and prints data based on the output format
-func outputData(data interface{}) error {
+func outputData(data any) error {
 	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
 }
