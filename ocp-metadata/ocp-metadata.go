@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"strings"
+
 	"gopkg.in/yaml.v3"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -133,6 +135,7 @@ func (meta *Metadata) populateOpenShiftMetadata(metadata *ClusterMetadata) error
 		return err
 	}
 	metadata.OCPVersion, metadata.OCPMajorVersion = version.ocpVersion, version.ocpMajorVersion
+	metadata.Stream = detectStream(version.ocpVersion)
 
 	infra, err := meta.getInfraDetails()
 	if err != nil {
@@ -492,6 +495,16 @@ func toMap(str string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return config, nil
+}
+
+// detectStream determines if the cluster is OKD or OCP based on the version string.
+// OKD versions contain ".okd-" in the version string (e.g., "4.15.0-0.okd-2024-03-10-010116")
+// while OCP versions do not (e.g., "4.16.19").
+func detectStream(version string) string {
+	if strings.Contains(strings.ToLower(version), ".okd-") {
+		return StreamOKD
+	}
+	return StreamOCP
 }
 
 func (meta *Metadata) GetOCPVirtualizationVersion() (string, error) {

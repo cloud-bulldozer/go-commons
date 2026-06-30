@@ -22,11 +22,14 @@ import (
 
 // OCP specific constants
 const (
-	running            = "Running"
-	completedUpdate    = "Completed"
-	workerNodeSelector = "node-role.kubernetes.io/worker=,node-role.kubernetes.io/infra!=,node-role.kubernetes.io/workload!="
-	monitoringNs       = "openshift-monitoring"
-	tokenExpiration    = 10 * time.Hour
+	running         = "Running"
+	completedUpdate = "Completed"
+	monitoringNs    = "openshift-monitoring"
+	tokenExpiration = 10 * time.Hour
+	// StreamOCP identifies an OpenShift Container Platform cluster.
+	StreamOCP = "ocp"
+	// StreamOKD identifies an OKD (OpenShift Kubernetes Distribution) cluster.
+	StreamOKD = "okd"
 )
 
 var routeGVR = schema.GroupVersionResource{
@@ -121,6 +124,7 @@ func (i ClusterInfo) HasAPIGroup(group string) bool {
 type ClusterMetadata struct {
 	MetricName             string `json:"metricName,omitempty"`
 	Distribution           string `json:"distribution,omitempty"`
+	Stream                 string `json:"stream,omitempty"`
 	MicroShift             bool   `json:"microshift"`
 	MicroShiftVersion      string `json:"microshiftVersion,omitempty"`
 	MicroShiftMajorVersion string `json:"microshiftMajorVersion,omitempty"`
