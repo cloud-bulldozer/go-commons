@@ -115,6 +115,14 @@ type ClusterInfo struct {
 	Capabilities ClusterCapabilities `json:"-"`
 }
 
+// Type to store aggregated node capacity
+type NodeResources struct {
+	CPUMilliCores int64
+	MemoryBytes   int64
+	PodCapacity   int64
+	NodeCount     int
+}
+
 // HasAPIGroup returns whether the cluster advertises the given API group.
 func (i ClusterInfo) HasAPIGroup(group string) bool {
 	return i.Capabilities.HasAPIGroup(group)
